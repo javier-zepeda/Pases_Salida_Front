@@ -1,0 +1,304 @@
+<div class="contenedor">
+
+  <a class="volver" routerLink="/pases">← Volver al listado</a>
+
+  @if (cargando() && pase() === null) {
+    <div class="tarjeta vacio">Cargando pase…</div>
+  } @else if (mensajeError()) {
+    <div class="tarjeta vacio">
+      <p class="vacio__titulo">{{ mensajeError() }}</p>
+      <div class="vacio__acciones">
+        <a class="boton boton--secundario" routerLink="/pases">Ir al listado</a>
+        @if (idPase > 0) {
+          <button type="button" class="boton boton--secundario" (click)="cargarPase()">Reintentar</button>
+        }
+      </div>
+    </div>
+  } @else if (pase(); as pase) {
+
+    <!-- Título, estado y acciones -->
+    <div class="cabecera">
+      <div>
+        <h1 class="cabecera__titulo">
+          Pase {{ formatearNumeroPase(pase.id_pase) }}
+          <span [class]="claseDeEstado(pase.estado_id)">{{ pase.estado }}</span>
+        </h1>
+        <p class="cabecera__subtitulo">{{ pase.tipo_pase }} · {{ pase.taller || 'Sin taller' }}</p>
+      </div>
+
+      <div class="cabecera__acciones">
+        @if (puedeAnular()) {
+          <button type="button" class="boton boton--secundario" (click)="abrirAnular()">Anular</button>
+        }
+        @if (puedeAutorizar()) {
+          <button type="button" class="boton boton--exito" (click)="abrirAutorizar()">✓ Autorizar</button>
+        }
+      </div>
+    </div>
+
+    <!-- Resultado de la última acción -->
+    @if (mensajeExito()) {
+      <div class="aviso aviso--exito aviso--espacio" role="status">{{ mensajeExito() }}</div>
+    }
+    @if (advertenciasCliente().length > 0) {
+      <div class="aviso aviso--advertencia aviso--espacio">
+        <strong>Atención:</strong> el cliente tiene otras órdenes sin facturar en otros vehículos.
+        <ul class="lista-ordenes">
+          @for (orden of advertenciasCliente(); track orden.numero_orden) {
+            <li><strong>{{ orden.numero_orden }}</strong> · {{ orden.placa || 'Sin placa' }} · {{ orden.estado }}</li>
+          }
+        </ul>
+      </div>
+    }
+
+    <!-- Si está anulado, se explica arriba de todo -->
+    @if (pase.estado_id === estadoAnulado) {
+      <div class="aviso aviso--error aviso--espacio">
+        <strong>Pase anulado</strong>
+        @if (pase.anulado_por_nombre) {
+          por {{ pase.anulado_por_nombre }}
+        }
+        @if (pase.fecha_anulacion) {
+          el {{ pase.fecha_anulacion | date: 'dd/MM/yyyy HH:mm' }}
+        }
+        @if (pase.motivo_anulacion) {
+          <p class="aviso__motivo">Motivo: {{ pase.motivo_anulacion }}</p>
+        }
+      </div>
+    }
+
+    <div class="distribucion">
+
+      <!-- Columna principal: los datos del pase -->
+      <div class="distribucion__principal">
+
+        @if (pase.requiere_orden) {
+          <section class="tarjeta seccion">
+            <h2 class="seccion__titulo">Orden de trabajo</h2>
+            <dl class="datos">
+              <div><dt>Número de orden</dt><dd class="datos__destacado">{{ pase.numero_orden || '—' }}</dd></div>
+              <div><dt>Datos tomados de</dt><dd>{{ pase.origen_orden === 'INTEGRA' ? 'Integra' : 'Ingreso manual' }}</dd></div>
+              <div class="datos__ancho"><dt>Cliente</dt><dd>{{ pase.cliente || '—' }}</dd></div>
+              <div><dt>Código de cliente</dt><dd>{{ pase.codigo_cliente || '—' }}</dd></div>
+              <div><dt>Facturar orden</dt><dd>{{ pase.facturar_orden ? 'Sí' : 'No' }}</dd></div>
+            </dl>
+          </section>
+        }
+
+        <section class="tarjeta seccion">
+          <h2 class="seccion__titulo">Vehículo</h2>
+          <dl class="datos">
+            <div><dt>Placa</dt><dd class="datos__destacado">{{ pase.placa || '—' }}</dd></div>
+            <div><dt>Tipo de vehículo</dt><dd>{{ pase.tipo_vehiculo || '—' }}</dd></div>
+            <div><dt>Marca</dt><dd>{{ pase.marca || '—' }}</dd></div>
+            <div><dt>Chasis</dt><dd>{{ pase.chasis || '—' }}</dd></div>
+          </dl>
+        </section>
+
+        <section class="tarjeta seccion">
+          <h2 class="seccion__titulo">Personas</h2>
+          <dl class="datos">
+            <div><dt>{{ pase.tipo_pase_id === 3 ? 'Empleado que lo usa' : 'Piloto' }}</dt><dd>{{ pase.piloto || '—' }}</dd></div>
+            <div><dt>Supervisor</dt><dd>{{ pase.supervisor || '—' }}</dd></div>
+            <div>
+              <dt>Creado por</dt>
+              <dd>
+                {{ pase.creado_por_nombre || '—' }}
+                <span class="datos__fecha">{{ pase.fecha_creacion | date: 'dd/MM/yyyy HH:mm' }}</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Autorizado por</dt>
+              <dd>
+                @if (pase.autorizado_por_nombre) {
+                  {{ pase.autorizado_por_nombre }}
+                  <span class="datos__fecha">{{ pase.fecha_autorizacion | date: 'dd/MM/yyyy HH:mm' }}</span>
+                } @else {
+                  <span class="datos__pendiente">Pendiente</span>
+                }
+              </dd>
+            </div>
+          </dl>
+        </section>
+
+        @if (pase.lleva_detalle) {
+          <section class="tarjeta seccion">
+            <h2 class="seccion__titulo">Artículos que salen</h2>
+            @if (pase.detalle.length === 0) {
+              <p class="seccion__vacio">No se registraron artículos.</p>
+            } @else {
+              <table class="articulos">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Descripción</th>
+                    <th class="articulos__numero">Cantidad</th>
+                    <th>Unidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (linea of pase.detalle; track linea.linea) {
+                    <tr>
+                      <td>{{ linea.linea }}</td>
+                      <td>{{ linea.descripcion }}</td>
+                      <td class="articulos__numero">{{ linea.cantidad | number: '1.0-2' }}</td>
+                      <td>{{ linea.unidad || '—' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </section>
+        }
+
+        <section class="tarjeta seccion">
+          <h2 class="seccion__titulo">Observaciones</h2>
+          @if (pase.observaciones) {
+            <p class="seccion__texto">{{ pase.observaciones }}</p>
+          } @else {
+            <p class="seccion__vacio">Sin observaciones.</p>
+          }
+        </section>
+
+        <section class="tarjeta seccion">
+          <h2 class="seccion__titulo">Fotos y adjuntos</h2>
+          @if (pase.adjuntos.length === 0) {
+            <p class="seccion__vacio">Este pase no tiene adjuntos.</p>
+          } @else {
+            <ul class="adjuntos">
+              @for (adjunto of pase.adjuntos; track adjunto.id_adjunto) {
+                <li>
+                  <span aria-hidden="true">📎</span>
+                  {{ adjunto.nombre_archivo || 'Archivo sin nombre' }}
+                  <span class="datos__fecha">{{ adjunto.fecha_subida | date: 'dd/MM/yyyy' }}</span>
+                </li>
+              }
+            </ul>
+            <p class="seccion__nota">Los archivos se podrán abrir cuando estén en el nuevo almacenamiento.</p>
+          }
+        </section>
+      </div>
+
+      <!-- Columna lateral: historial -->
+      <aside class="tarjeta seccion distribucion__lateral">
+        <h2 class="seccion__titulo">Historial</h2>
+        <ol class="historial">
+          @for (registro of historial(); track $index) {
+            <li [class]="'historial__item historial__item--' + registro.movimiento.tipo">
+              <p class="historial__titulo">{{ registro.movimiento.titulo }}</p>
+              <p class="historial__quien">
+                {{ registro.usuario || 'Sistema' }} · {{ registro.fecha | date: 'dd/MM/yyyy HH:mm' }}
+              </p>
+              @for (linea of registro.movimiento.lineas; track $index) {
+                <p class="historial__linea">{{ linea }}</p>
+              }
+            </li>
+          } @empty {
+            <li class="seccion__vacio">Sin movimientos.</li>
+          }
+        </ol>
+      </aside>
+    </div>
+
+    <!-- ─── Ventanas de confirmación ─────────────────────────────────────── -->
+    @if (dialogo() !== 'ninguno') {
+      <div class="fondo-dialogo" (click)="cerrarDialogo()">
+        <div class="dialogo" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+
+          @switch (dialogo()) {
+
+            @case ('autorizar') {
+              <h2 class="dialogo__titulo">¿Autorizar el pase {{ formatearNumeroPase(pase.id_pase) }}?</h2>
+              <p>
+                El vehículo <strong>{{ pase.placa || 'sin placa' }}</strong>
+                @if (pase.cliente) {
+                  de <strong>{{ pase.cliente }}</strong>
+                }
+                podrá salir del taller.
+              </p>
+              @if (pase.valida_pendientes) {
+                <p class="dialogo__nota">Antes de autorizar se revisa en Integra si tiene otras órdenes sin facturar.</p>
+              }
+              @if (errorDialogo()) {
+                <div class="aviso aviso--error">{{ errorDialogo() }}</div>
+              }
+              <div class="dialogo__botones">
+                <button type="button" class="boton boton--secundario" (click)="cerrarDialogo()" [disabled]="procesando()">Cancelar</button>
+                <button type="button" class="boton boton--exito" (click)="autorizar(false)" [disabled]="procesando()">
+                  {{ procesando() ? 'Autorizando…' : 'Sí, autorizar' }}
+                </button>
+              </div>
+            }
+
+            @case ('pendientes') {
+              <h2 class="dialogo__titulo">El vehículo tiene otras órdenes sin facturar</h2>
+              <p>Antes de dejarlo salir, confirme que estas órdenes ya se cobraron o que pueden quedar abiertas:</p>
+
+              <ul class="lista-ordenes lista-ordenes--bloquea">
+                @for (orden of pendientesDelVehiculo(); track orden.numero_orden) {
+                  <li>
+                    <strong>{{ orden.numero_orden }}</strong> · {{ orden.estado }}
+                    @if (orden.fecha_apertura) {
+                      · abierta el {{ orden.fecha_apertura | date: 'dd/MM/yyyy' }}
+                    }
+                  </li>
+                }
+              </ul>
+
+              @if (pendientesDelCliente().length > 0) {
+                <p class="dialogo__nota">El cliente también tiene órdenes abiertas en otros vehículos:</p>
+                <ul class="lista-ordenes">
+                  @for (orden of pendientesDelCliente(); track orden.numero_orden) {
+                    <li><strong>{{ orden.numero_orden }}</strong> · {{ orden.placa || 'Sin placa' }} · {{ orden.estado }}</li>
+                  }
+                </ul>
+              }
+
+              @if (errorDialogo()) {
+                <div class="aviso aviso--error">{{ errorDialogo() }}</div>
+              }
+
+              @if (puedeConfirmarPendientes()) {
+                <div class="dialogo__botones">
+                  <button type="button" class="boton boton--secundario" (click)="cerrarDialogo()" [disabled]="procesando()">Cancelar</button>
+                  <button type="button" class="boton boton--peligro" (click)="autorizar(true)" [disabled]="procesando()">
+                    {{ procesando() ? 'Autorizando…' : 'Autorizar de todas formas' }}
+                  </button>
+                </div>
+              } @else {
+                <div class="aviso aviso--advertencia">
+                  No puede autorizar este pase. Pida a un Administrador que lo revise o que se facturen esas órdenes.
+                </div>
+                <div class="dialogo__botones">
+                  <button type="button" class="boton boton--secundario" (click)="cerrarDialogo()">Entendido</button>
+                </div>
+              }
+            }
+
+            @case ('anular') {
+              <h2 class="dialogo__titulo">¿Anular el pase {{ formatearNumeroPase(pase.id_pase) }}?</h2>
+              <p>El pase quedará anulado y no se podrá usar para sacar el vehículo. Esta acción no se puede deshacer.</p>
+              <div class="campo">
+                <label for="motivo">Motivo de la anulación</label>
+                <textarea id="motivo" name="motivo" rows="3"
+                          [(ngModel)]="motivoAnulacion"
+                          [maxlength]="largoMaximoMotivo"
+                          placeholder="Ej. Se ingresó la orden equivocada"></textarea>
+                <span class="campo__contador">{{ motivoAnulacion.length }} / {{ largoMaximoMotivo }}</span>
+              </div>
+              @if (errorDialogo()) {
+                <div class="aviso aviso--error">{{ errorDialogo() }}</div>
+              }
+              <div class="dialogo__botones">
+                <button type="button" class="boton boton--secundario" (click)="cerrarDialogo()" [disabled]="procesando()">Cancelar</button>
+                <button type="button" class="boton boton--peligro" (click)="anular()" [disabled]="procesando() || !motivoValido()">
+                  {{ procesando() ? 'Anulando…' : 'Sí, anular' }}
+                </button>
+              </div>
+            }
+          }
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,128 @@
+<div class="contenedor">
+
+  <!-- Título y acción principal -->
+  <div class="cabecera">
+    <div>
+      <h1 class="cabecera__titulo">Listado de Pases de Salida</h1>
+      <p class="cabecera__subtitulo">Consulta, crea y autoriza los pases de salida del taller</p>
+    </div>
+
+    @if (sesion.tienePermiso('pases.crear')) {
+      <a class="boton boton--principal" routerLink="/pases/nuevo">
+        <span aria-hidden="true">＋</span> Nuevo pase
+      </a>
+    }
+  </div>
+
+  <!-- Filtros -->
+  <section class="tarjeta filtros" aria-label="Filtros">
+
+    <!-- Filtro rápido por estado -->
+    <div class="filtros__estados" role="group" aria-label="Filtrar por estado">
+      @for (opcion of opcionesEstado; track opcion.etiqueta) {
+        <button type="button"
+                class="chip"
+                [class.chip--activo]="estadoSeleccionado() === opcion.valor"
+                (click)="elegirEstado(opcion.valor)">
+          {{ opcion.etiqueta }}
+        </button>
+      }
+    </div>
+
+    <div class="filtros__fila">
+      <!-- Búsqueda -->
+      <form class="busqueda" (ngSubmit)="buscar()">
+        <label for="busqueda" class="solo-lector">Buscar</label>
+        <span class="busqueda__icono" aria-hidden="true">🔍</span>
+        <input id="busqueda"
+               name="busqueda"
+               type="search"
+               [(ngModel)]="textoBusqueda"
+               placeholder="Buscar por orden, placa o cliente y presione Enter">
+        @if (textoBusqueda) {
+          <button type="button" class="busqueda__limpiar" (click)="limpiarBusqueda()" aria-label="Limpiar búsqueda">✕</button>
+        }
+      </form>
+
+      <!-- Tipo de pase -->
+      <div class="filtros__tipo">
+        <label for="tipo" class="solo-lector">Tipo de pase</label>
+        <select id="tipo" name="tipo" [(ngModel)]="tipoSeleccionado" (ngModelChange)="cambiarTipo()">
+          <option [ngValue]="null">Todos los tipos</option>
+          @for (tipo of tiposPase(); track tipo.id_tipo) {
+            <option [ngValue]="tipo.id_tipo">{{ tipo.nombre }}</option>
+          }
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Resultados -->
+  @if (mensajeError()) {
+    <div class="aviso aviso--error mensaje">
+      {{ mensajeError() }}
+      <button type="button" class="boton boton--secundario" (click)="cargarPases()">Reintentar</button>
+    </div>
+  } @else if (cargando() && pases().length === 0) {
+    <div class="tarjeta vacio">Cargando pases…</div>
+  } @else if (pases().length === 0) {
+    <div class="tarjeta vacio">
+      <p class="vacio__titulo">No hay pases que coincidan</p>
+      <p>Pruebe con otra búsqueda o quite los filtros.</p>
+      <button type="button" class="boton boton--secundario" (click)="limpiarFiltros()">Limpiar filtros</button>
+    </div>
+  } @else {
+    <section class="tarjeta resultados" [class.resultados--cargando]="cargando()">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>No. de Pase</th>
+            <th>Tipo de Pase</th>
+            <th>No. de Orden</th>
+            <th>Cliente / Piloto</th>
+            <th>Vehículo</th>
+            <th>Taller</th>
+            <th>Fecha</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (pase of pases(); track pase.id_pase) {
+            <tr class="tabla__fila" tabindex="0"
+                (click)="abrirPase(pase)"
+                (keydown.enter)="abrirPase(pase)">
+              <td data-etiqueta="Pase" class="tabla__numero">{{ formatearNumeroPase(pase.id_pase) }}</td>
+              <td data-etiqueta="Tipo">{{ pase.tipo_pase }}</td>
+              <td data-etiqueta="Orden">{{ pase.numero_orden || '—' }}</td>
+              <td data-etiqueta="Cliente / Piloto" class="tabla__cliente">{{ pase.cliente || pase.piloto || '—' }}</td>
+              <td data-etiqueta="Vehículo">
+                <span class="tabla__placa">{{ pase.placa || '—' }}</span>
+                <span class="tabla__tenue">{{ pase.marca }}</span>
+              </td>
+              <td data-etiqueta="Taller">{{ pase.taller || '—' }}</td>
+              <td data-etiqueta="Fecha">{{ pase.fecha_creacion | date: 'dd/MM/yyyy' }}</td>
+              <td data-etiqueta="Estado"><span [class]="claseDeEstado(pase.estado_id)">{{ pase.estado }}</span></td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Paginación -->
+    <nav class="paginacion" aria-label="Paginación">
+      <span class="paginacion__texto">
+        Mostrando {{ primerRegistro() | number }}–{{ ultimoRegistro() | number }} de {{ total() | number }} pases
+      </span>
+      <div class="paginacion__botones">
+        <button type="button" class="boton boton--secundario" (click)="paginaAnterior()" [disabled]="pagina() === 1 || cargando()">
+          ← Anterior
+        </button>
+        <span class="paginacion__pagina">Página {{ pagina() }} de {{ totalPaginas() | number }}</span>
+        <button type="button" class="boton boton--secundario" (click)="paginaSiguiente()" [disabled]="pagina() === totalPaginas() || cargando()">
+          Siguiente →
+        </button>
+      </div>
+    </nav>
+  }
+
+</div>

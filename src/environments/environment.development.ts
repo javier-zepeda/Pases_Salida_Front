@@ -1,5 +1,5 @@
 export const environment = {
-    production: false,
+    produccion: false,
     urlApi: 'http://localhost:3100',
     urlPortal: 'http://localhost:4200',
 };

@@ -1,0 +1,23 @@
+<header class="encabezado">
+  <div class="encabezado__contenido">
+
+    <a class="encabezado__marca" routerLink="/pases">
+      <img src="img/logo-codaca-blanco.png" alt="Grupo Codaca" class="encabezado__logo">
+      <span class="encabezado__separador" aria-hidden="true"></span>
+      <span class="encabezado__app">Gestor de Pases de Salida</span>
+    </a>
+
+    <div class="encabezado__derecha">
+      @if (sesion.nombreUsuario()) {
+        <span class="encabezado__usuario" title="Usuario actual">
+          <span class="encabezado__inicial" aria-hidden="true">{{ sesion.nombreUsuario().charAt(0) }}</span>
+          <span class="encabezado__nombre">{{ sesion.nombreUsuario() }}</span>
+        </span>
+      }
+      <a class="encabezado__volver" [href]="urlPortalTaller">
+        ← <span class="encabezado__volver-texto">Volver al </span>Portal
+      </a>
+    </div>
+
+  </div>
+</header>

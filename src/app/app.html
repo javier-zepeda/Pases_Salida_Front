@@ -1,1 +1,42 @@
-<router-outlet />
+<app-encabezado />
+
+<main>
+  @switch (estadoInicio()) {
+
+    @case ('listo') {
+      <router-outlet />
+    }
+
+    @case ('cargando') {
+      <div class="pantalla-aviso">
+        <div class="pantalla-aviso__girador" aria-hidden="true"></div>
+        <p>Verificando su acceso…</p>
+      </div>
+    }
+
+    @case ('sin-acceso') {
+      <div class="pantalla-aviso tarjeta">
+        <h1>No tiene acceso a Pases de Salida</h1>
+        <p>Su usuario no tiene un rol asignado en esta aplicación. Solicite acceso al administrador de Pases de Salida.</p>
+        <a class="boton boton--secundario" [href]="urlPortalTaller">← Volver al Portal</a>
+      </div>
+    }
+
+    @case ('sin-sesion') {
+      <div class="pantalla-aviso tarjeta">
+        <h1>Inicie sesión</h1>
+        <p>Para usar Pases de Salida debe iniciar sesión con su cuenta de Codaca desde el Portal.</p>
+        <a class="boton boton--principal" [href]="urlPortalTaller">Ir al Portal</a>
+      </div>
+    }
+
+    @case ('error') {
+      <div class="pantalla-aviso tarjeta">
+        <h1>No se pudo conectar con el servidor</h1>
+        <p>Revise su conexión a internet e intente de nuevo. Si el problema continúa, avise a Sistemas.</p>
+        <button type="button" class="boton boton--principal" (click)="iniciar()">Intentar de nuevo</button>
+      </div>
+    }
+
+  }
+</main>

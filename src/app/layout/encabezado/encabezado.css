@@ -1,0 +1,125 @@
+.encabezado {
+  background: var(--rojo);
+  color: var(--blanco);
+}
+
+.encabezado__contenido {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Logo + nombre de la aplicación */
+.encabezado__marca {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: var(--blanco);
+  text-decoration: none;
+  min-width: 0;
+}
+
+.encabezado__logo {
+  height: 40px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.encabezado__separador {
+  width: 1px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.encabezado__app {
+  font-size: 18px;
+  font-weight: 500;
+  white-space: nowrap;
+  /* Si no cabe, se recorta con "…" en lugar de encimarse con el botón */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Usuario y enlace al Portal */
+.encabezado__derecha {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.encabezado__usuario {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.encabezado__inicial {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.encabezado__volver {
+  color: var(--blanco);
+  text-decoration: none;
+  font-size: 14px;
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.encabezado__volver:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Pantallas medianas: solo la inicial del usuario */
+@media (max-width: 800px) {
+  .encabezado__nombre {
+    display: none;
+  }
+}
+
+/* Celular: logo más pequeño, sin usuario ni separador, y "← Portal" */
+@media (max-width: 640px) {
+  .encabezado__contenido {
+    padding: 0 14px;
+    gap: 10px;
+  }
+
+  .encabezado__marca {
+    gap: 10px;
+  }
+
+  .encabezado__logo {
+    height: 26px;
+  }
+
+  .encabezado__separador,
+  .encabezado__usuario,
+  .encabezado__volver-texto {
+    display: none;
+  }
+
+  .encabezado__app {
+    font-size: 15px;
+  }
+
+  .encabezado__volver {
+    padding: 6px 12px;
+  }
+}
