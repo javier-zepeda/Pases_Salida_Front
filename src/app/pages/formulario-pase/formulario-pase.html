@@ -1,0 +1,299 @@
+<div class="contenedor">
+
+  @if (idPaseEditar(); as idPase) {
+    <a class="volver" [routerLink]="['/pases', idPase]">← Volver al pase</a>
+    <div class="cabecera">
+      <h1 class="cabecera__titulo">Editar pase {{ formatearNumeroPase(idPase) }}</h1>
+      <p class="cabecera__subtitulo">El tipo, la orden y el taller no se pueden cambiar</p>
+    </div>
+  } @else {
+    <a class="volver" routerLink="/pases">← Volver al listado</a>
+    <div class="cabecera">
+      <h1 class="cabecera__titulo">Nuevo pase de salida</h1>
+      <p class="cabecera__subtitulo">Complete los datos y guarde el pase</p>
+    </div>
+  }
+
+  @if (!tienePermisoFormulario()) {
+    <div class="aviso aviso--advertencia">
+      No tiene permiso para {{ modoEdicion() ? 'editar' : 'crear' }} pases de salida.
+    </div>
+  } @else if (cargando()) {
+    <div class="tarjeta vacio">Cargando…</div>
+  } @else if (mensajeError()) {
+    <div class="aviso aviso--error mensaje">
+      {{ mensajeError() }}
+      <button type="button" class="boton boton--secundario" (click)="cargarDatos()">Reintentar</button>
+    </div>
+  } @else if (motivoNoEditable()) {
+    <div class="aviso aviso--advertencia mensaje">
+      {{ motivoNoEditable() }}
+      <a class="boton boton--secundario" [routerLink]="['/pases', idPaseEditar()]">Ver el pase</a>
+    </div>
+  } @else {
+
+    <!-- 1. Tipo de pase -->
+    <section class="tarjeta seccion">
+      <h2 class="seccion__titulo"><span class="seccion__numero">1</span> ¿Qué va a salir?</h2>
+
+      <div class="tipos" role="radiogroup" aria-label="Tipo de pase">
+        @for (tipo of tiposVisibles(); track tipo.id_tipo) {
+          <button type="button"
+                  class="tipo"
+                  [class.tipo--fijo]="modoEdicion()"
+                  role="radio"
+                  [attr.aria-checked]="idTipoSeleccionado() === tipo.id_tipo"
+                  [class.tipo--activo]="idTipoSeleccionado() === tipo.id_tipo"
+                  (click)="elegirTipo(tipo)">
+            <img class="tipo__icono" [src]="descripcionDe(tipo).icono" alt="" aria-hidden="true">
+            <span class="tipo__nombre">{{ tipo.nombre }}</span>
+            <span class="tipo__descripcion">{{ descripcionDe(tipo).descripcion }}</span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <!-- El resto aparece después de elegir el tipo -->
+    @if (tipoSeleccionado()) {
+
+      <!-- 2. Taller -->
+      <section class="tarjeta seccion">
+        <h2 class="seccion__titulo"><span class="seccion__numero">2</span> Taller</h2>
+        <div class="campo campo--mediano">
+          <label for="taller">¿Desde qué taller sale?</label>
+          <!-- Al editar se muestra el nombre: el taller ya no se cambia, y puede
+               ser uno que hoy está inactivo y no aparece en la lista -->
+          @if (paseOriginal(); as pase) {
+            <input id="taller" name="taller" [value]="pase.taller || 'Sin taller'" disabled>
+          } @else {
+            <select id="taller" name="taller" [(ngModel)]="idTaller">
+              <option [ngValue]="null" disabled>Seleccione un taller</option>
+              @for (taller of talleres(); track taller.id_taller) {
+                <option [ngValue]="taller.id_taller">{{ taller.nombre }}</option>
+              }
+            </select>
+          }
+        </div>
+      </section>
+
+      <!-- 3. Orden de trabajo (solo en los tipos que la requieren) -->
+      @if (llevaOrden()) {
+        <section class="tarjeta seccion">
+          <h2 class="seccion__titulo"><span class="seccion__numero">3</span> Orden de trabajo</h2>
+          <div class="campos">
+            <div class="campo campo--ancho">
+              <label for="numero_orden">Número de orden *</label>
+              @if (modoEdicion()) {
+                <!-- Al editar, la orden queda fija (el back tampoco la cambia) -->
+                <div class="buscar-orden">
+                  <input id="numero_orden" name="numero_orden" [value]="campos.numero_orden" disabled>
+                </div>
+              } @else {
+                <!-- Enter en la caja también busca, igual que el botón -->
+                <div class="buscar-orden">
+                  <input id="numero_orden" name="numero_orden" maxlength="60" class="mayusculas"
+                         [(ngModel)]="campos.numero_orden"
+                         (ngModelChange)="numeroOrdenCambio()"
+                         (keydown.enter)="buscarOrden()"
+                         placeholder="Ej. OCE116790">
+                  <button type="button" class="boton boton--secundario"
+                          (click)="buscarOrden()" [disabled]="buscandoOrden()">
+                    {{ buscandoOrden() ? 'Buscando…' : 'Buscar' }}
+                  </button>
+                </div>
+              }
+            </div>
+            <!-- Resultado de la búsqueda en Integra -->
+            @switch (resultadoBusqueda()) {
+              @case ('encontrada') {
+                <div class="aviso aviso--exito campo--ancho" role="status">✓ {{ mensajeBusqueda() }}</div>
+              }
+              @case ('no-disponible') {
+                <div class="aviso aviso--info campo--ancho" role="status">{{ mensajeBusqueda() }}</div>
+              }
+              @case ('no-existe') {
+                <div class="aviso aviso--advertencia campo--ancho" role="status">{{ mensajeBusqueda() }}</div>
+              }
+              @case ('error') {
+                <div class="aviso aviso--error campo--ancho" role="status">{{ mensajeBusqueda() }}</div>
+              }
+            }
+
+            <!-- Otras órdenes sin facturar (solo en los tipos que lo revisan) -->
+            @if (pendientesDelVehiculo().length > 0) {
+              <div class="aviso aviso--advertencia campo--ancho pendientes">
+                <strong>⚠ Este vehículo tiene otras órdenes sin facturar</strong>
+                <p>Puede crear el pase, pero no se podrá autorizar hasta que se revisen:</p>
+                <ul>
+                  @for (orden of pendientesDelVehiculo(); track orden.numero_orden) {
+                    <li>
+                      <strong>{{ orden.numero_orden }}</strong> · {{ orden.estado }}
+                      @if (orden.fecha_apertura) {
+                        · abierta el {{ orden.fecha_apertura | date: 'dd/MM/yyyy' }}
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (pendientesDelCliente().length > 0) {
+              <div class="aviso aviso--info campo--ancho pendientes">
+                <strong>El cliente tiene órdenes abiertas en otros vehículos</strong>
+                <ul>
+                  @for (orden of pendientesDelCliente(); track orden.numero_orden) {
+                    <li>
+                      <strong>{{ orden.numero_orden }}</strong> · {{ orden.placa || 'Sin placa' }} · {{ orden.estado }}
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+
+            <div class="campo">
+              <label for="codigo_cliente">Código de cliente</label>
+              <input id="codigo_cliente" name="codigo_cliente" maxlength="20"
+                     [(ngModel)]="campos.codigo_cliente">
+            </div>
+            <div class="campo campo--ancho">
+              <label for="cliente">Cliente *</label>
+              <input id="cliente" name="cliente" maxlength="400"
+                     [(ngModel)]="campos.cliente">
+            </div>
+            <label class="casilla campo--ancho">
+              <input type="checkbox" name="facturar_orden" [(ngModel)]="campos.facturar_orden">
+              Se factura esta orden
+            </label>
+          </div>
+        </section>
+      }
+
+      <!-- Vehículo -->
+      <section class="tarjeta seccion">
+        <h2 class="seccion__titulo">
+          <span class="seccion__numero">{{ llevaOrden() ? 4 : 3 }}</span> Vehículo
+        </h2>
+        <div class="campos">
+          <div class="campo">
+            <label for="placa">Placa *</label>
+            <input id="placa" name="placa" maxlength="60" class="mayusculas"
+                   [(ngModel)]="campos.placa" placeholder="Ej. C123ABC">
+          </div>
+          <div class="campo">
+            <label for="tipo_vehiculo">Tipo de vehículo *</label>
+            <input id="tipo_vehiculo" name="tipo_vehiculo" maxlength="100"
+                   [(ngModel)]="campos.tipo_vehiculo" placeholder="Ej. Camión, Pickup">
+          </div>
+          <div class="campo">
+            <label for="marca">Marca *</label>
+            <input id="marca" name="marca" maxlength="60" class="mayusculas"
+                   [(ngModel)]="campos.marca" placeholder="Ej. HINO">
+          </div>
+          <div class="campo">
+            <label for="chasis">Chasis</label>
+            <input id="chasis" name="chasis" maxlength="60" class="mayusculas"
+                   [(ngModel)]="campos.chasis">
+          </div>
+        </div>
+      </section>
+
+      <!-- Personas y observaciones -->
+      <section class="tarjeta seccion">
+        <h2 class="seccion__titulo">
+          <span class="seccion__numero">{{ llevaOrden() ? 5 : 4 }}</span> Personas
+        </h2>
+        <div class="campos">
+          <div class="campo">
+            <label for="piloto">{{ etiquetaPiloto() }} *</label>
+            <input id="piloto" name="piloto" maxlength="150"
+                   [(ngModel)]="campos.piloto">
+          </div>
+          <div class="campo">
+            <label for="supervisor">Supervisor *</label>
+            <input id="supervisor" name="supervisor" maxlength="150"
+                   [(ngModel)]="campos.supervisor">
+          </div>
+          <div class="campo campo--ancho">
+            <label for="observaciones">Observaciones</label>
+            <textarea id="observaciones" name="observaciones" rows="3" maxlength="1000"
+                      [(ngModel)]="campos.observaciones"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- Artículos (solo en suministros) -->
+      @if (llevaDetalle()) {
+        <section class="tarjeta seccion">
+          <h2 class="seccion__titulo">
+            <span class="seccion__numero">{{ llevaOrden() ? 6 : 5 }}</span> Artículos que salen
+          </h2>
+
+          <div class="articulos">
+            @for (linea of lineas; track linea; let i = $index) {
+              <div class="articulo">
+                <span class="articulo__numero">{{ i + 1 }}</span>
+
+                <div class="campo articulo__descripcion">
+                  <label [for]="'descripcion-' + i">Descripción *</label>
+                  <input [id]="'descripcion-' + i" maxlength="200"
+                         [(ngModel)]="linea.descripcion" placeholder="Ej. Aceite 15W40">
+                </div>
+
+                <div class="campo articulo__cantidad">
+                  <label [for]="'cantidad-' + i">Cantidad *</label>
+                  <input [id]="'cantidad-' + i" type="number" min="0.01" step="0.01"
+                         [(ngModel)]="linea.cantidad" placeholder="0">
+                </div>
+
+                <div class="campo articulo__unidad">
+                  <label [for]="'unidad-' + i">Unidad</label>
+                  <input [id]="'unidad-' + i" maxlength="30"
+                         [(ngModel)]="linea.unidad" placeholder="Ej. galones">
+                </div>
+
+                <button type="button" class="articulo__quitar"
+                        (click)="quitarLinea(linea)"
+                        [disabled]="lineas.length === 1"
+                        [attr.aria-label]="'Quitar artículo ' + (i + 1)"
+                        title="Quitar artículo">✕</button>
+              </div>
+            }
+          </div>
+
+          <div class="articulos__pie">
+            <button type="button" class="boton boton--secundario"
+                    (click)="agregarLinea()"
+                    [disabled]="lineas.length >= maximoArticulos">
+              ＋ Agregar artículo
+            </button>
+            <span class="articulos__contador">{{ lineas.length }} de {{ maximoArticulos }}</span>
+          </div>
+        </section>
+      }
+
+      <!-- Errores al guardar -->
+      @if (erroresGuardar().length > 0) {
+        <div class="aviso aviso--error errores" role="alert">
+          <strong>No se pudo guardar el pase:</strong>
+          <ul>
+            @for (error of erroresGuardar(); track $index) {
+              <li>{{ error }}</li>
+            }
+          </ul>
+        </div>
+      }
+
+      <!-- Botones -->
+      <div class="acciones">
+        @if (idPaseEditar(); as idPase) {
+          <a class="boton boton--secundario" [routerLink]="['/pases', idPase]">Cancelar</a>
+        } @else {
+          <a class="boton boton--secundario" routerLink="/pases">Cancelar</a>
+        }
+        <button type="button" class="boton boton--principal" (click)="guardar()" [disabled]="guardando()">
+          {{ guardando() ? 'Guardando…' : (modoEdicion() ? 'Guardar cambios' : 'Guardar pase') }}
+        </button>
+      </div>
+    }
+  }
+</div>

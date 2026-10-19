@@ -54,6 +54,8 @@
           }
         </select>
       </div>
+
+      <button type="button" class="boton boton--principal" (click)="buscar()">Buscar</button>
     </div>
   </section>
 
@@ -111,7 +113,7 @@
     <!-- Paginación -->
     <nav class="paginacion" aria-label="Paginación">
       <span class="paginacion__texto">
-        Mostrando {{ primerRegistro() | number }}–{{ ultimoRegistro() | number }} de {{ total() | number }} pases
+        Mostrando {{ primerRegistro() | number }}–{{ ultimoRegistro() | number }} de {{ total() | number }} {{ total() === 1 ? 'pase' : 'pases' }}
       </span>
       <div class="paginacion__botones">
         <button type="button" class="boton boton--secundario" (click)="paginaAnterior()" [disabled]="pagina() === 1 || cargando()">

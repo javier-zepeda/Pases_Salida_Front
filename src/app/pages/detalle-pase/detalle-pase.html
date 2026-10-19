@@ -27,6 +27,9 @@
       </div>
 
       <div class="cabecera__acciones">
+        @if (puedeEditar()) {
+          <a class="boton boton--secundario" [routerLink]="['/pases', pase.id_pase, 'editar']">✎ Editar</a>
+        }
         @if (puedeAnular()) {
           <button type="button" class="boton boton--secundario" (click)="abrirAnular()">Anular</button>
         }
@@ -38,7 +41,7 @@
 
     <!-- Resultado de la última acción -->
     @if (mensajeExito()) {
-      <div class="aviso aviso--exito aviso--espacio" role="status">{{ mensajeExito() }}</div>
+      <div [class]="'aviso aviso--espacio aviso--' + tipoMensaje()" role="status">{{ mensajeExito() }}</div>
     }
     @if (advertenciasCliente().length > 0) {
       <div class="aviso aviso--advertencia aviso--espacio">

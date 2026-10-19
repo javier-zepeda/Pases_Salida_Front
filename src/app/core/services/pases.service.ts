@@ -2,7 +2,9 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { FiltrosListado, RespuestaListado, PaseDetalle, RespuestaAutorizar } from '../models/pase.model';
+import { FiltrosListado, RespuestaListado, PaseDetalle, RespuestaAutorizar,
+  DatosPase, RespuestaCrear, RespuestaEditar
+} from '../models/pase.model';
 
 // Llamadas a la API de pases de salida (/api/pases).
 @Injectable({ providedIn: 'root' })
@@ -48,4 +50,14 @@ export class PasesService {
     const cuerpo = { motivo: motivo };
     return this.http.post<{ mensaje: string }>(this.urlBase + '/' + idPase + '/anular', cuerpo);
   }
+    // POST /api/pases
+  crear(datos: DatosPase): Observable<RespuestaCrear> {
+    return this.http.post<RespuestaCrear>(this.urlBase, datos);
+  }
+
+  // PUT /api/pases/:id
+  editar(idPase: number, datos: DatosPase): Observable<RespuestaEditar> {
+    return this.http.put<RespuestaEditar>(this.urlBase + '/' + idPase, datos);
+  }
+
 }

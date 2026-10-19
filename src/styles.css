@@ -224,6 +224,15 @@ h1, h2, h3 {
   box-shadow: 0 0 0 3px rgba(204, 34, 41, 0.12);
 }
 
+/* Campos que no se pueden cambiar (ej. la orden al editar un pase) */
+.campo input:disabled,
+.campo select:disabled,
+.campo textarea:disabled {
+  background: var(--fondo);
+  color: var(--texto-secundario);
+  cursor: not-allowed;
+}
+
 /* ── Avisos dentro de la página ─────────────────────────────────────────── */
 .aviso {
   padding: 14px 16px;

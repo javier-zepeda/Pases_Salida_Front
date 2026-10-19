@@ -1,6 +1,4 @@
-// Forma de los datos que devuelve la API de Pases de Salida.
-// Si el back agrega o cambia un campo, se actualiza aquí y TypeScript
-// avisa en qué pantallas hay que ajustar.
+// Plantilla de datos para enviar al Backend 
 
 // Estados del pase (Pases_Taller.estado_pase)
 export const ESTADO_CREADO = 0;
@@ -112,4 +110,48 @@ export interface ErrorAutorizar {
   mensaje: string;
   requiere_confirmacion?: boolean;
   ordenes_pendientes?: OrdenPendiente[];
+}
+// El back ya valida los vacios y los transforma en null, no hace falta colocar string o null aca
+export interface DatosPase {
+  tipo_pase_id: number;
+  taller_id: number;
+  numero_orden: string;
+  codigo_cliente: string;
+  cliente: string;
+  tipo_vehiculo: string;
+  marca: string;
+  placa: string;
+  chasis: string;
+  piloto: string;
+  supervisor: string;
+  observaciones: string;
+  facturar_orden: boolean;
+  detalle: LineaSuministro[];
+}
+
+// Respuesta al crear un pase
+export interface RespuestaCrear {
+  mensaje: string;
+  id_pase: number;
+  estado_id: number;                       // 1 si quedó autorizado al crearlo (cajero)
+  ordenes_pendientes: OrdenPendiente[];
+}
+
+// Respuesta al editar un pase
+export interface RespuestaEditar {
+  mensaje: string;
+  id_pase: number;
+  campos_modificados: string[];
+}
+
+// Respuesta del back cuando los datos no son válidos (400)
+export interface ErrorValidacion {
+  mensaje: string;
+  errores?: string[];                      // ej. ['El campo «placa» es obligatorio']
+}
+
+// Aviso que una pantalla le pasa al detalle al abrirlo (ej. "Los cambios se guardaron")
+export interface AvisoAlAbrir {
+  texto: string;
+  tipo: 'exito' | 'advertencia' | 'info';
 }

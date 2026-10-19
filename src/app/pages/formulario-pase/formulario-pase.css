@@ -1,0 +1,300 @@
+.volver {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: var(--texto-secundario);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.volver:hover {
+  color: var(--rojo-intenso);
+}
+
+.cabecera {
+  margin-bottom: 20px;
+}
+
+.cabecera__titulo {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.cabecera__subtitulo {
+  margin: 4px 0 0;
+  color: var(--texto-secundario);
+}
+
+/* ── Secciones numeradas ── */
+.seccion {
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.seccion__titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.seccion__numero {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--rojo-intenso);
+  color: var(--blanco);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* ── Tarjetas de tipo de pase ── */
+.tipos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.tipo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 16px;
+  border: 2px solid var(--borde);
+  border-radius: var(--radio-grande);
+  background: var(--blanco);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tipo:hover {
+  border-color: var(--rojo-intenso);
+}
+
+.tipo--activo,
+.tipo--activo:hover {
+  border-color: var(--rojo-intenso);
+  background: #fff7f6;
+}
+
+/* Las imágenes miden 1024 px: se muestran pequeñas sin deformarse */
+.tipo__icono {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.tipo__nombre {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.tipo__descripcion {
+  font-size: 13px;
+  color: var(--texto-secundario);
+}
+
+.campo--mediano {
+  max-width: 360px;
+}
+
+.vacio {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--texto-secundario);
+}
+
+.mensaje {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+
+/* ── Campos en dos columnas ── */
+.campos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 20px;
+}
+
+.campo--ancho {
+  grid-column: 1 / -1;   /* ocupa las dos columnas */
+}
+
+/* Placa, marca y chasis se ven en mayúsculas (el back las guarda así) */
+.mayusculas {
+  text-transform: uppercase;
+}
+
+/* ...pero el texto de ejemplo (placeholder) se deja como está escrito */
+.mayusculas::placeholder {
+  text-transform: none;
+}
+
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.casilla input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--rojo-intenso);
+}
+
+/* ── Errores y botones ── */
+.errores {
+  margin-bottom: 16px;
+}
+
+.errores ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ── Celular ── */
+@media (max-width: 640px) {
+  .campos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .acciones {
+    flex-direction: column-reverse;
+  }
+
+  .acciones .boton {
+    width: 100%;
+  }
+}
+
+/* ── Número de orden con su botón Buscar ── */
+.buscar-orden {
+  display: flex;
+  gap: 8px;
+  max-width: 480px;
+}
+
+.buscar-orden input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* órdenes sin facturar */
+.pendientes p {
+  margin: 6px 0 0;
+}
+
+.pendientes ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.pendientes li {
+  margin-bottom: 4px;
+}
+
+/* ── Artículos (suministros) ── */
+.articulos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Una fila: número | descripción | cantidad | unidad | quitar */
+.articulo {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 120px 150px 36px;
+  gap: 12px;
+  align-items: end;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--borde-suave);
+}
+
+.articulo__numero {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  color: var(--texto-tenue);
+}
+
+.articulo__quitar {
+  width: 36px;
+  height: 42px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  background: var(--blanco);
+  color: var(--texto-secundario);
+  cursor: pointer;
+}
+
+.articulo__quitar:hover:not(:disabled) {
+  border-color: var(--anulado);
+  color: var(--anulado);
+}
+
+.articulo__quitar:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.articulos__pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.articulos__contador {
+  font-size: 13px;
+  color: var(--texto-tenue);
+}
+
+/* Celular: descripción arriba a todo lo ancho; cantidad y unidad abajo */
+@media (max-width: 640px) {
+  .articulo {
+    grid-template-columns: 28px minmax(0, 1fr) minmax(0, 1fr) 36px;
+  }
+
+  .articulo__descripcion {
+    grid-column: 2 / 4;
+  }
+
+  .articulo__quitar {
+    grid-column: 4;
+    grid-row: 1;
+  }
+
+  .articulo__cantidad {
+    grid-column: 2;
+  }
+
+  .articulo__unidad {
+    grid-column: 3;
+  }
+}
+/* Al editar, la tarjeta del tipo se muestra sola y no se puede cambiar */
+.tipo--fijo,
+.tipo--fijo:hover {
+  cursor: default;
+  max-width: 320px;
+}

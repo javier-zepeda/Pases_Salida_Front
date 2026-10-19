@@ -1,13 +1,11 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PasesService } from '../../core/services/pases.service';
 import { SesionService } from '../../core/services/sesion.service';
-import {
-  PaseDetalle, OrdenPendiente, ErrorAutorizar, ESTADO_CREADO, ESTADO_ANULADO
-} from '../../core/models/pase.model';
+import { PaseDetalle, OrdenPendiente, ErrorAutorizar, AvisoAlAbrir, ESTADO_CREADO, ESTADO_AUTORIZADO, ESTADO_ANULADO } from '../../core/models/pase.model';
 import { formatearNumeroPase, claseDeEstado } from '../../core/utils/formato';
 import { describirMovimiento, MovimientoLegible } from '../../core/utils/bitacora';
 
@@ -24,8 +22,10 @@ const LARGO_MAXIMO_MOTIVO = 500;
   templateUrl: './detalle-pase.html',
   styleUrl: './detalle-pase.css'
 })
+
 export class DetallePase implements OnInit {
   private ruta = inject(ActivatedRoute);
+  private router = inject(Router);
   private pasesService = inject(PasesService);
   protected sesion = inject(SesionService);
 
@@ -46,6 +46,7 @@ export class DetallePase implements OnInit {
   protected procesando = signal(false);
   protected errorDialogo = signal('');
   protected mensajeExito = signal('');
+  protected tipoMensaje = signal<AvisoAlAbrir['tipo']>('exito');   // color del aviso de arriba
   protected ordenesPendientes = signal<OrdenPendiente[]>([]);   // las que muestra el diálogo
   protected advertenciasCliente = signal<OrdenPendiente[]>([]); // después de autorizar
   protected motivoAnulacion = '';                               // enlazado con [(ngModel)]
@@ -76,6 +77,21 @@ export class DetallePase implements OnInit {
       && this.sesion.tienePermiso('pases.autorizar');
   });
 
+  // Editar: no anulados; los autorizados solo con 'pases.editar_autorizado'
+  protected puedeEditar = computed(() => {
+    const pase = this.pase();
+    if (pase === null || pase.estado_id === ESTADO_ANULADO) {
+      return false;
+    }
+    if (!this.sesion.tienePermiso('pases.editar')) {
+      return false;
+    }
+    if (pase.estado_id === ESTADO_AUTORIZADO) {
+      return this.sesion.tienePermiso('pases.editar_autorizado');
+    }
+    return true;
+  });
+
   protected puedeAnular = computed(() => {
     const pase = this.pase();
     return pase !== null
@@ -91,8 +107,6 @@ export class DetallePase implements OnInit {
     this.ordenesPendientes().filter((orden) => orden.relacion === 'CLIENTE')
   );
 
-  // true cuando el back respondió que el usuario puede autorizar de todas formas
-  // (solo pasa si tiene 'pases.autorizar_con_pendientes')
   protected puedeConfirmarPendientes = signal(false);
 
   ngOnInit(): void {
@@ -109,6 +123,7 @@ export class DetallePase implements OnInit {
     this.pase.set(null);
     this.dialogo.set('ninguno');
     this.prepararDialogo();
+    this.mostrarAvisoDeNavegacion();
 
     // La URL debe traer un número de pase (ej. /pases/66427)
     if (!Number.isInteger(idPase) || idPase <= 0) {
@@ -169,7 +184,7 @@ export class DetallePase implements OnInit {
       next: (respuesta) => {
         this.procesando.set(false);
         this.cerrarDialogo();
-        this.mensajeExito.set('El pase quedó autorizado.');
+        this.mostrarMensaje('El pase quedó autorizado.', 'exito');
         this.advertenciasCliente.set(respuesta.advertencias);
         this.cargarPase();
       },
@@ -225,7 +240,7 @@ export class DetallePase implements OnInit {
       next: () => {
         this.procesando.set(false);
         this.cerrarDialogo();
-        this.mensajeExito.set('El pase quedó anulado.');
+        this.mostrarMensaje('El pase quedó anulado.', 'exito');
         this.advertenciasCliente.set([]);
         this.cargarPase();
       },
@@ -264,5 +279,33 @@ export class DetallePase implements OnInit {
       return 'No tiene permiso para ' + accion + ' este pase.';
     }
     return 'No se pudo ' + accion + ' el pase. Intente de nuevo.';
+  }
+
+  // ---------------------------------------------------------------------
+  // Aviso de arriba (resultado de la última acción)
+  // ---------------------------------------------------------------------
+
+  private mostrarMensaje(texto: string, tipo: AvisoAlAbrir['tipo']): void {
+    this.mensajeExito.set(texto);
+    this.tipoMensaje.set(tipo);
+  }
+  //
+  // - currentNavigation(): la navegación en curso. Puede ser null porque laapp no usa zone.js y ngOnInit corre cuando la navegación ya terminó;
+  // - Solo se muestra si la navegación la hizo el código ('imperative'). Si
+  //   el usuario usó "atrás" del navegador ('popstate'), el aviso ya se vio.
+  // - Al recargar la página no hay state, así que no se repite.
+  private mostrarAvisoDeNavegacion(): void {
+    let navegacion = this.router.currentNavigation();
+    if (navegacion === null) {
+      navegacion = this.router.lastSuccessfulNavigation();
+    }
+    if (navegacion === null || navegacion.trigger !== 'imperative') {
+      return;
+    }
+
+    const estado = navegacion.extras.state as { aviso?: AvisoAlAbrir } | undefined;
+    if (estado && estado.aviso) {
+      this.mostrarMensaje(estado.aviso.texto, estado.aviso.tipo);
+    }
   }
 }
