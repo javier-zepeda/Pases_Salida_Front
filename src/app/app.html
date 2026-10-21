@@ -18,6 +18,9 @@
       <div class="pantalla-aviso tarjeta">
         <h1>No tiene acceso a Pases de Salida</h1>
         <p>Su usuario no tiene un rol asignado en esta aplicación. Solicite acceso al administrador de Pases de Salida.</p>
+        @if (autenticacion.correo()) {
+          <p class="pantalla-aviso__nota">Entró como <strong>{{ autenticacion.correo() }}</strong></p>
+        }
         <a class="boton boton--secundario" [href]="urlPortalTaller">← Volver al Portal</a>
       </div>
     }
@@ -25,8 +28,25 @@
     @case ('sin-sesion') {
       <div class="pantalla-aviso tarjeta">
         <h1>Inicie sesión</h1>
-        <p>Para usar Pases de Salida debe iniciar sesión con su cuenta de Codaca desde el Portal.</p>
-        <a class="boton boton--principal" [href]="urlPortalTaller">Ir al Portal</a>
+        <p>Para usar Pases de Salida inicie sesión con su cuenta de Microsoft de Codaca.</p>
+        @if (autenticacion.errorLogin()) {
+          <p class="aviso aviso--error">{{ autenticacion.errorLogin() }}</p>
+        }
+        <div class="pantalla-aviso__botones">
+          <button type="button" class="boton boton--principal" (click)="autenticacion.iniciarSesion()">Iniciar sesión con Microsoft</button>
+          <a class="boton boton--secundario" [href]="urlPortalTaller">← Volver al Portal</a>
+        </div>
+      </div>
+    }
+
+    @case ('sesion-cerrada') {
+      <div class="pantalla-aviso tarjeta">
+        <h1>Cerró sesión</h1>
+        <p>Su sesión de Microsoft se cerró en este navegador.</p>
+        <div class="pantalla-aviso__botones">
+          <button type="button" class="boton boton--principal" (click)="autenticacion.iniciarSesion()">Iniciar sesión de nuevo</button>
+          <a class="boton boton--secundario" [href]="urlPortalTaller">← Volver al Portal</a>
+        </div>
       </div>
     }
 

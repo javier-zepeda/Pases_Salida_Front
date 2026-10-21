@@ -32,3 +32,15 @@
     transform: rotate(360deg);
   }
 }
+
+/* Correo con el que entró (pantalla "sin acceso") */
+.pantalla-aviso__nota {
+  font-size: 14px;
+}
+
+.pantalla-aviso__botones {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}

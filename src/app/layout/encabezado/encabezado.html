@@ -17,6 +17,9 @@
       <a class="encabezado__volver" [href]="urlPortalTaller">
         ← <span class="encabezado__volver-texto">Volver al </span>Portal
       </a>
+      @if (sesion.nombreUsuario()) {
+        <button type="button" class="encabezado__salir" (click)="salir()" title="Cerrar sesión">Salir</button>
+      }
     </div>
 
   </div>

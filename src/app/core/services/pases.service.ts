@@ -37,6 +37,11 @@ export class PasesService {
     return this.http.get<PaseDetalle>(this.urlBase + '/' + idPase);
   }
 
+  // GET /api/pases/:id/pdf → el PDF llega como archivo (Blob), no como JSON
+  obtenerPdf(idPase: number): Observable<Blob> {
+    return this.http.get(this.urlBase + '/' + idPase + '/pdf', { responseType: 'blob' });
+  }
+
   // POST /api/pases/:id/autorizar
   // conPendientes = true cuando el usuario ya confirmó que desea autorizar
   // aunque el vehículo tenga otras órdenes sin facturar.

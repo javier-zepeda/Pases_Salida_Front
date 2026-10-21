@@ -50,6 +50,7 @@ export class DetallePase implements OnInit {
   protected ordenesPendientes = signal<OrdenPendiente[]>([]);   // las que muestra el diálogo
   protected advertenciasCliente = signal<OrdenPendiente[]>([]); // después de autorizar
   protected motivoAnulacion = '';                               // enlazado con [(ngModel)]
+  protected generandoPdf = signal(false);
 
   // Historial en texto legible, del más reciente al más antiguo
   protected historial = computed(() => {
@@ -97,6 +98,14 @@ export class DetallePase implements OnInit {
     return pase !== null
       && pase.estado_id !== ESTADO_ANULADO
       && this.sesion.tienePermiso('pases.anular');
+  });
+
+  // Imprimir: solo autorizados y anulados (el back también lo valida)
+  protected puedeImprimir = computed(() => {
+    const pase = this.pase();
+    return pase !== null
+      && pase.estado_id !== ESTADO_CREADO
+      && this.sesion.tienePermiso('pases.imprimir');
   });
 
   // Las órdenes del diálogo separadas por motivo
@@ -247,6 +256,48 @@ export class DetallePase implements OnInit {
       error: (error: HttpErrorResponse) => {
         this.procesando.set(false);
         this.errorDialogo.set(this.mensajeDeAccion(error, 'anular'));
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------
+  // Imprimir
+  // ---------------------------------------------------------------------
+
+  // Pide el PDF al back y lo abre en una pestaña nueva.
+  // El PDF no se abre con un enlace normal porque la petición necesita el
+  // token de la sesión; por eso se descarga como archivo y se le crea una
+  // dirección temporal (blob:) que la pestaña sí puede abrir.
+  protected imprimir(): void {
+    // La pestaña se abre antes de pedir el PDF: si se abriera al llegar la
+    // respuesta, el navegador la bloquearía como ventana emergente.
+    const pestana = window.open('', '_blank');
+    if (pestana) {
+      pestana.document.title = 'Generando PDF…';
+      pestana.document.body.textContent = 'Generando el PDF del pase…';
+    }
+
+    this.generandoPdf.set(true);
+    this.pasesService.obtenerPdf(this.idPase).subscribe({
+      next: (archivo) => {
+        this.generandoPdf.set(false);
+        const direccion = URL.createObjectURL(archivo);
+
+        if (pestana) {
+          pestana.location.href = direccion;
+        } else {
+          window.location.href = direccion;   // el navegador bloqueó la pestaña nueva
+        }
+
+        // La dirección temporal se libera cuando la pestaña ya cargó el PDF
+        setTimeout(() => URL.revokeObjectURL(direccion), 60000);
+      },
+      error: () => {
+        this.generandoPdf.set(false);
+        if (pestana) {
+          pestana.close();
+        }
+        this.mostrarMensaje('No se pudo generar el PDF. Intente de nuevo.', 'advertencia');
       }
     });
   }

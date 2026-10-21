@@ -27,6 +27,11 @@
       </div>
 
       <div class="cabecera__acciones">
+        @if (puedeImprimir()) {
+          <button type="button" class="boton boton--secundario" (click)="imprimir()" [disabled]="generandoPdf()">
+            🖨 {{ generandoPdf() ? 'Generando…' : 'Imprimir' }}
+          </button>
+        }
         @if (puedeEditar()) {
           <a class="boton boton--secundario" [routerLink]="['/pases', pase.id_pase, 'editar']">✎ Editar</a>
         }
