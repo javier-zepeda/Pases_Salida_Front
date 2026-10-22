@@ -1,7 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Encabezado } from './layout/encabezado/encabezado';
+import { BarraLateral } from './layout/barra-lateral/barra-lateral';
+import { OpcionMenu, SeccionMenu } from './layout/barra-lateral/menu.model';
 import { SesionService } from './core/services/sesion.service';
 import { AutenticacionService } from './core/services/autenticacion.service';
 import { environment } from '../environments/environment';
@@ -14,7 +16,7 @@ type EstadoInicio = 'cargando' | 'listo' | 'sin-acceso' | 'sin-sesion' | 'sesion
 //   2. pide el perfil al back para saber qué puede hacer en Pases de Salida.
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, Encabezado],
+  imports: [RouterOutlet, Encabezado, BarraLateral],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -24,6 +26,53 @@ export class App implements OnInit {
 
   protected estadoInicio = signal<EstadoInicio>('cargando');
   protected urlPortalTaller = environment.urlPortal + '/taller';
+
+  // Panel del menú abierto (solo en celular)
+  protected menuAbierto = signal(false);
+
+  // Menú de la barra lateral: cada opción se muestra solo si tiene el permiso.
+  // Se recalcula solo cuando carga el perfil (tienePermiso lee la señal del perfil).
+  protected menu = computed<SeccionMenu[]>(() => {
+    const secciones: SeccionMenu[] = [];
+
+    const pases: OpcionMenu[] = [];
+    if (this.sesion.tienePermiso('pases.ver')) {
+      pases.push({ texto: 'Pases de salida', icono: 'lista', ruta: '/pases', rutaExacta: true });
+    }
+    if (this.sesion.tienePermiso('pases.crear')) {
+      pases.push({ texto: 'Nuevo pase', icono: 'nuevo', ruta: '/pases/nuevo' });
+    }
+    if (pases.length > 0) {
+      secciones.push({ titulo: 'Pases', opciones: pases });
+    }
+
+    if (this.sesion.tienePermiso('catalogos.ver')) {
+      secciones.push({
+        titulo: 'Catálogos',
+        opciones: [
+          { texto: 'Talleres', icono: 'taller', ruta: '/catalogos/talleres' },
+          { texto: 'Sedes', icono: 'sede', ruta: '/catalogos/sedes' }
+        ]
+      });
+    }
+
+    return secciones;
+  });
+
+  protected menuPie: OpcionMenu[] = [
+    { texto: 'Volver al Portal', icono: 'portal', urlExterna: this.urlPortalTaller },
+    { texto: 'Cerrar sesión', icono: 'salir', accion: () => this.cerrarSesion() }
+  ];
+
+  // Se avisa antes porque también cierra el Portal y Outlook en este navegador
+  private cerrarSesion(): void {
+    const confirmo = window.confirm(
+      'Se cerrará su sesión de Microsoft en este navegador (también la del Portal y Outlook). ¿Desea salir?'
+    );
+    if (confirmo) {
+      this.autenticacion.cerrarSesion();
+    }
+  }
 
   async ngOnInit(): Promise<void> {
     await this.iniciar();

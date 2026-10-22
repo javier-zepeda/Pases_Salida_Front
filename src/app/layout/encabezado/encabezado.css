@@ -14,6 +14,42 @@
   gap: 16px;
 }
 
+.encabezado__izquierda {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Botón ☰: solo en pantallas pequeñas, donde la barra lateral se esconde */
+.encabezado__menu {
+  display: none;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  margin-left: -8px;
+  background: none;
+  border: none;
+  border-radius: var(--radio);
+  color: var(--blanco);
+  cursor: pointer;
+}
+
+.encabezado__menu:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.encabezado__menu svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
 /* Logo + nombre de la aplicación */
 .encabezado__marca {
   display: flex;
@@ -40,20 +76,14 @@
   font-size: 18px;
   font-weight: 500;
   white-space: nowrap;
-  /* Si no cabe, se recorta con "…" en lugar de encimarse con el botón */
+  /* Si no cabe, se recorta con "…" en lugar de encimarse con el usuario */
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Usuario y enlace al Portal */
-.encabezado__derecha {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
+/* Usuario actual */
 .encabezado__usuario {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -72,48 +102,18 @@
   text-transform: uppercase;
 }
 
-.encabezado__volver {
-  color: var(--blanco);
-  text-decoration: none;
-  font-size: 14px;
-  padding: 8px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 999px;
-  white-space: nowrap;
-  transition: background 0.15s;
-}
+/* Mismo ancho en el que se esconde la barra lateral (barra-lateral.css) */
+@media (max-width: 900px) {
+  .encabezado__menu {
+    display: flex;
+  }
 
-.encabezado__volver:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-/* Cerrar sesión: más discreto que "Volver al Portal" */
-.encabezado__salir {
-  background: none;
-  border: none;
-  padding: 8px 4px;
-  color: var(--blanco);
-  font-family: inherit;
-  font-size: 14px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-  white-space: nowrap;
-  opacity: 0.9;
-}
-
-.encabezado__salir:hover {
-  opacity: 1;
-}
-
-/* Pantallas medianas: solo la inicial del usuario */
-@media (max-width: 800px) {
   .encabezado__nombre {
     display: none;
   }
 }
 
-/* Celular: logo más pequeño, sin usuario ni separador, y "← Portal" */
+/* Celular: logo más pequeño y sin separador */
 @media (max-width: 640px) {
   .encabezado__contenido {
     padding: 0 14px;
@@ -128,17 +128,11 @@
     height: 26px;
   }
 
-  .encabezado__separador,
-  .encabezado__usuario,
-  .encabezado__volver-texto {
+  .encabezado__separador {
     display: none;
   }
 
   .encabezado__app {
     font-size: 15px;
-  }
-
-  .encabezado__volver {
-    padding: 6px 12px;
   }
 }

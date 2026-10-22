@@ -1,11 +1,20 @@
+<!-- Con sesión: barra lateral + encabezado + pantalla -->
+@if (estadoInicio() === 'listo') {
+  <div class="estructura">
+    <app-barra-lateral [secciones]="menu()" [pie]="menuPie" [(abiertaEnCelular)]="menuAbierto" />
+    <div class="estructura__principal">
+      <app-encabezado (abrirMenu)="menuAbierto.set(true)" />
+      <main>
+        <router-outlet />
+      </main>
+    </div>
+  </div>
+} @else {
+<!-- Sin sesión todavía: solo encabezado y el aviso que corresponda -->
 <app-encabezado />
 
 <main>
   @switch (estadoInicio()) {
-
-    @case ('listo') {
-      <router-outlet />
-    }
 
     @case ('cargando') {
       <div class="pantalla-aviso">
@@ -60,3 +69,4 @@
 
   }
 </main>
+}

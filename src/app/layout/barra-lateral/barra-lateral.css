@@ -1,0 +1,238 @@
+/* Barra lateral estándar Codaca
+   Colores propios en variables para que otra aplicación pueda copiarla
+   y solo ajustar aquí. */
+:host {
+  --barra-fondo: #1f2329;
+  --barra-fondo-hover: rgba(255, 255, 255, 0.06);
+  --barra-fondo-activa: rgba(255, 255, 255, 0.10);
+  --barra-acento: #e0262e;            /* rojo Codaca: marca la opción activa */
+  --barra-texto: #c9ced6;
+  --barra-texto-fuerte: #ffffff;
+  --barra-titulo: #7d8590;
+  --barra-ancho: 248px;
+  --barra-ancho-colapsada: 68px;
+
+  display: contents;
+}
+
+.barra {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: var(--barra-ancho);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--barra-fondo);
+  color: var(--barra-texto);
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.2s ease;
+}
+
+.barra--colapsada {
+  width: var(--barra-ancho-colapsada);
+}
+
+/* Botón para colapsar (flecha) */
+.barra__colapsar {
+  align-self: flex-end;
+  margin: 14px 14px 6px;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: var(--radio);
+  color: var(--barra-texto);
+  cursor: pointer;
+}
+
+.barra__colapsar:hover {
+  background: var(--barra-fondo-hover);
+  color: var(--barra-texto-fuerte);
+}
+
+.barra__colapsar svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 0.2s ease;
+}
+
+.barra--colapsada .barra__colapsar {
+  align-self: center;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.barra--colapsada .barra__colapsar svg {
+  transform: rotate(180deg);
+}
+
+/* Secciones */
+.barra__secciones {
+  flex: 1;
+}
+
+.barra__seccion {
+  padding: 8px 12px;
+}
+
+.barra__titulo {
+  margin: 8px 12px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--barra-titulo);
+  white-space: nowrap;
+}
+
+/* Colapsada: el título se vuelve una rayita para separar grupos */
+.barra--colapsada .barra__titulo {
+  height: 1px;
+  margin: 10px 8px;
+  overflow: hidden;
+  color: transparent;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Opción (enlace o botón) */
+.barra__opcion {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  margin-bottom: 2px;
+  border: none;
+  border-radius: var(--radio);
+  background: none;
+  color: var(--barra-texto);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.barra__opcion:hover {
+  background: var(--barra-fondo-hover);
+  color: var(--barra-texto-fuerte);
+}
+
+.barra__opcion:focus-visible,
+.barra__colapsar:focus-visible {
+  outline: 2px solid var(--barra-acento);
+  outline-offset: 2px;
+}
+
+.barra__opcion--activa {
+  background: var(--barra-fondo-activa);
+  color: var(--barra-texto-fuerte);
+}
+
+/* Rayita roja a la izquierda de la opción activa */
+.barra__opcion--activa::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 8px;
+  bottom: 8px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: var(--barra-acento);
+}
+
+.barra__icono {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.barra--colapsada .barra__opcion {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.barra--colapsada .barra__texto {
+  display: none;
+}
+
+/* Pie: volver al Portal y cerrar sesión */
+.barra__pie {
+  padding: 10px 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.barra-fondo {
+  display: none;
+}
+
+/* ── Celular y tablet: la barra se esconde y se abre como panel ─────────── */
+@media (max-width: 900px) {
+  .barra,
+  .barra--colapsada {
+    position: fixed;
+    left: 0;
+    z-index: 30;
+    width: min(280px, 85vw);
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  .barra--abierta {
+    transform: translateX(0);
+    box-shadow: 0 0 24px rgba(0, 0, 0, 0.35);
+  }
+
+  /* En celular siempre se ve completa (con textos) */
+  .barra__colapsar {
+    display: none;
+  }
+
+  .barra--colapsada .barra__titulo {
+    height: auto;
+    margin: 8px 12px 6px;
+    color: var(--barra-titulo);
+    background: none;
+  }
+
+  .barra--colapsada .barra__opcion {
+    justify-content: flex-start;
+    padding: 10px 12px;
+  }
+
+  .barra--colapsada .barra__texto {
+    display: inline;
+  }
+
+  .barra__secciones {
+    padding-top: 12px;
+  }
+
+  .barra-fondo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    background: rgba(0, 0, 0, 0.45);
+  }
+}

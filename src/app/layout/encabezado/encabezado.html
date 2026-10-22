@@ -1,26 +1,27 @@
 <header class="encabezado">
   <div class="encabezado__contenido">
 
-    <a class="encabezado__marca" routerLink="/pases">
-      <img src="img/logo-codaca-blanco.png" alt="Grupo Codaca" class="encabezado__logo">
-      <span class="encabezado__separador" aria-hidden="true"></span>
-      <span class="encabezado__app">Gestor de Pases de Salida</span>
-    </a>
+    <div class="encabezado__izquierda">
+      <!-- Solo con sesión y en pantallas pequeñas (ver CSS) -->
+      @if (sesion.nombreUsuario()) {
+        <button type="button" class="encabezado__menu" (click)="abrirMenu.emit()" aria-label="Abrir menú">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
+      }
 
-    <div class="encabezado__derecha">
-      @if (sesion.nombreUsuario()) {
-        <span class="encabezado__usuario" title="Usuario actual">
-          <span class="encabezado__inicial" aria-hidden="true">{{ sesion.nombreUsuario().charAt(0) }}</span>
-          <span class="encabezado__nombre">{{ sesion.nombreUsuario() }}</span>
-        </span>
-      }
-      <a class="encabezado__volver" [href]="urlPortalTaller">
-        ← <span class="encabezado__volver-texto">Volver al </span>Portal
+      <a class="encabezado__marca" routerLink="/pases">
+        <img src="img/logo-codaca-blanco.png" alt="Grupo Codaca" class="encabezado__logo">
+        <span class="encabezado__separador" aria-hidden="true"></span>
+        <span class="encabezado__app">Gestor de Pases de Salida</span>
       </a>
-      @if (sesion.nombreUsuario()) {
-        <button type="button" class="encabezado__salir" (click)="salir()" title="Cerrar sesión">Salir</button>
-      }
     </div>
+
+    @if (sesion.nombreUsuario()) {
+      <span class="encabezado__usuario" title="Usuario actual">
+        <span class="encabezado__inicial" aria-hidden="true">{{ sesion.nombreUsuario().charAt(0) }}</span>
+        <span class="encabezado__nombre">{{ sesion.nombreUsuario() }}</span>
+      </span>
+    }
 
   </div>
 </header>

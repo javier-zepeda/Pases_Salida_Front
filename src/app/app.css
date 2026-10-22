@@ -1,3 +1,14 @@
+/* Barra lateral a la izquierda; encabezado y pantalla a la derecha */
+.estructura {
+  display: flex;
+  min-height: 100vh;
+}
+
+.estructura__principal {
+  flex: 1;
+  min-width: 0;   /* evita que tablas anchas empujen la página hacia los lados */
+}
+
 /* Pantallas de aviso al abrir la aplicación (cargando, sin acceso, error) */
 .pantalla-aviso {
   max-width: 520px;

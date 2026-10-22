@@ -43,9 +43,7 @@ export class AutenticacionService {
   // Mensaje si Microsoft respondió con un error al volver del login
   readonly errorLogin = signal('');
 
-  // Se llama una sola vez al abrir la aplicación (app.config.ts), antes de
-  // que el router muestre cualquier pantalla: así MSAL lee la respuesta de
-  // Microsoft que viene en la dirección antes de que Angular la cambie.
+  // Se llama una sola vez al abrir la aplicación (app.config.ts).
   async iniciar(): Promise<void> {
     try {
       await this.msal.initialize();
