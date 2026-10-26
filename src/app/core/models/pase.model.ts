@@ -50,12 +50,13 @@ export interface LineaSuministro {
   unidad: string | null;
 }
 
-// Foto o archivo adjunto al pase
+// Imagen adjunta al pase (la imagen se pide aparte: GET /api/pases/:id/adjuntos/:idAdjunto)
 export interface Adjunto {
   id_adjunto: number;
   nombre_archivo: string | null;
-  ruta: string;
   content_type: string | null;
+  tamano_bytes: string | null;     // BIGINT llega como texto
+  del_sistema_anterior: boolean;   // migrada del PHP: la imagen no se pasó a Azure
   fecha_subida: string;
 }
 
@@ -73,6 +74,9 @@ export interface PaseDetalle extends PaseResumen {
   requiere_orden: boolean;
   valida_pendientes: boolean;
   lleva_detalle: boolean;
+  lleva_destino: boolean;
+  taller_destino_id: number | null;   // traslado: a qué taller va (null en los migrados)
+  taller_destino: string | null;
   origen_orden: string | null;
   codigo_cliente: string | null;
   chasis: string | null;
@@ -102,7 +106,6 @@ export interface OrdenPendiente {
 export interface RespuestaAutorizar {
   mensaje: string;
   id_pase: number;
-  advertencias: OrdenPendiente[];   // órdenes del mismo cliente (no bloquean)
 }
 
 // Respuesta de error del back cuando no se puede autorizar (409)
@@ -115,6 +118,7 @@ export interface ErrorAutorizar {
 export interface DatosPase {
   tipo_pase_id: number;
   taller_id: number;
+  taller_destino_id: number | null;   // solo en traslado
   numero_orden: string;
   codigo_cliente: string;
   cliente: string;

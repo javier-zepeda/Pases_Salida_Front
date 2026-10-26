@@ -19,4 +19,9 @@ export class CatalogosService {
   talleres(): Observable<Taller[]> {
     return this.http.get<Taller[]>(this.urlBase + '/talleres');
   }
+
+  // Todos los talleres activos (destino de un traslado: puede ser cualquiera)
+  talleresDestino(): Observable<Taller[]> {
+    return this.http.get<Taller[]>(this.urlBase + '/talleres-destino');
+  }
 }

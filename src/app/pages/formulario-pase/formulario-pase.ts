@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject, computed } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal, inject, computed } from '@angular/core';
 import { TipoPase, Taller } from '../../core/models/catalogo.model';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router, ActivatedRoute } from '@angular/router';
@@ -8,6 +8,7 @@ import { SesionService } from '../../core/services/sesion.service';
 import { PasesService } from '../../core/services/pases.service';
 import { OrdenesService } from '../../core/services/ordenes.service';
 import {
+  Adjunto,
   DatosPase,
   ErrorValidacion,
   OrdenPendiente,
@@ -20,9 +21,17 @@ import {
 } from '../../core/models/pase.model';
 import { OrdenIntegra } from '../../core/models/orden.model';
 import { formatearNumeroPase } from '../../core/utils/formato';
-import { forkJoin, of } from 'rxjs';
+import { Observable, concat, forkJoin, of } from 'rxjs';
 import { DatePipe } from '@angular/common';
 import { ConCambiosSinGuardar } from '../../core/guards/cambios-sin-guardar.guard';
+import { ImagenAdjunta } from '../../compartido/imagen-adjunta/imagen-adjunta';
+import {
+  MAXIMO_IMAGENES_POR_PASE,
+  TIPOS_IMAGEN_ACEPTADOS,
+  TAMANO_MAXIMO_MB,
+  revisarImagen,
+  formatearTamano,
+} from '../../core/utils/imagenes';
 
 // Ícono y descripción de los tipos de pase
 const DESCRIPCION_DE_TIPOS: Record<string, { icono: string; descripcion: string }> = {
@@ -55,7 +64,7 @@ type CamposPase = Omit<DatosPase, 'tipo_pase_id' | 'taller_id'>;
 //   ninguno        todavía no se ha buscado
 //   encontrada     existe; se llenaron los datos
 //   no-existe      Integra respondió que no existe
-//   no-disponible  Integra no respondió; el usuario llena los datos a mano
+//   no-disponible  Integra no respondió; debe intentar de nuevo (sin orden verificada no se crea)
 //   error          falló la llamada al back
 type ResultadoBusqueda = 'ninguno' | 'encontrada' | 'no-existe' | 'no-disponible' | 'error';
 
@@ -68,6 +77,12 @@ interface LineaFormulario {
 
 // Mismo límite que valida el back
 const MAXIMO_ARTICULOS = 50;
+
+// Imagen elegida que todavía no se sube (se sube al guardar el pase)
+interface ImagenNueva {
+  archivo: File;
+  vistaPrevia: string;   // dirección temporal "blob:..." para la miniatura
+}
 
 function camposVacios(): CamposPase {
   return {
@@ -82,6 +97,7 @@ function camposVacios(): CamposPase {
     supervisor: '',
     observaciones: '',
     facturar_orden: false,
+    taller_destino_id: null,
     detalle: [],
   };
 }
@@ -103,14 +119,14 @@ function valorOActual(valorIntegra: string | null, valorActual: string): string 
 }
 
 @Component({
-  imports: [FormsModule, RouterLink, DatePipe],
+  imports: [FormsModule, RouterLink, DatePipe, ImagenAdjunta],
   selector: 'app-formulario-pase',
   styleUrl: './formulario-pase.css',
   templateUrl: './formulario-pase.html',
   // Cerrar la pestaña o recargar con cambios sin guardar: el navegador pregunta
   host: { '(window:beforeunload)': 'avisarAntesDeCerrar($event)' },
 })
-export class FormularioPase implements OnInit, ConCambiosSinGuardar {
+export class FormularioPase implements OnInit, OnDestroy, ConCambiosSinGuardar {
   private catalogosService = inject(CatalogosService);
   protected sesion = inject(SesionService);
   private pasesService = inject(PasesService);
@@ -139,6 +155,7 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
   // Catálogos
   protected tiposPase = signal<TipoPase[]>([]);
   protected talleres = signal<Taller[]>([]);
+  protected talleresDestino = signal<Taller[]>([]);   // todos los activos (traslado)
   protected cargando = signal(true);
   protected mensajeError = signal('');
 
@@ -172,9 +189,50 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
   protected maximoArticulos = MAXIMO_ARTICULOS;
 
   // ¿El tipo elegido lleva lista de artículos?
+  // ¿El tipo elegido pide taller de destino? (traslado)
+  protected llevaDestino = computed(() => {
+    const tipo = this.tipoSeleccionado();
+    return tipo !== null && tipo.lleva_destino;
+  });
+
   protected llevaDetalle = computed(() => {
     const tipo = this.tipoSeleccionado();
     return tipo !== null && tipo.lleva_detalle;
+  });
+
+  // --- Imágenes ---
+  // Subir y quitar imágenes pide 'pases.editar' (también al crear)
+  protected puedeAdjuntar = computed(() => this.sesion.tienePermiso('pases.editar'));
+  protected maximoImagenes = MAXIMO_IMAGENES_POR_PASE;
+  protected tamanoMaximoMb = TAMANO_MAXIMO_MB;
+  protected tiposImagenAceptados = TIPOS_IMAGEN_ACEPTADOS;
+  protected formatearTamano = formatearTamano;
+
+  protected imagenesNuevas = signal<ImagenNueva[]>([]);    // elegidas, se suben al guardar
+  protected idsParaQuitar = signal<number[]>([]);          // de las que ya tiene, se quitan al guardar
+  protected avisosImagenes = signal<string[]>([]);         // imágenes que no se aceptaron
+
+  // Imágenes que el pase ya tiene (solo al editar)
+  protected adjuntosActuales = computed<Adjunto[]>(() => {
+    const pase = this.paseOriginal();
+    if (pase === null) {
+      return [];
+    }
+    return pase.adjuntos;
+  });
+
+  // Cuántas tendrá el pase después de guardar
+  protected totalImagenes = computed(() =>
+    this.adjuntosActuales().length - this.idsParaQuitar().length + this.imagenesNuevas().length
+  );
+
+  // Número del paso en pantalla: va después de artículos (si los hay)
+  protected numeroSeccionImagenes = computed(() => {
+    let numero = this.llevaOrden() ? 6 : 5;
+    if (this.llevaDetalle()) {
+      numero = numero + 1;
+    }
+    return numero;
   });
 
   // --- Búsqueda de la orden en Integra ---
@@ -198,6 +256,16 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
     const tipo = this.tipoSeleccionado();
     return tipo !== null && tipo.requiere_orden;
   });
+
+  // Talleres a los que puede ir la unidad: todos menos el de salida
+  protected opcionesDestino(): Taller[] {
+    return this.talleresDestino().filter((taller) => taller.id_taller !== this.idTaller);
+  }
+
+  // Al editar un pase con orden: cliente, código de cliente, placa y chasis
+  // vienen de Integra y no se cambian (el back tampoco los acepta).
+  // En los tipos sin orden se escriben a mano y sí se pueden corregir.
+  protected datosDeIntegraFijos = computed(() => this.modoEdicion() && this.llevaOrden());
 
   // En "Vehículo interno" el piloto es el empleado que usa el vehículo
   protected etiquetaPiloto = computed(() => {
@@ -251,6 +319,7 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
     this.motivoNoEditable.set('');
     this.fotoInicial = '';
     this.guardadoConExito = false;
+    this.limpiarImagenes();
 
     const idPase = this.idPaseEditar();
 
@@ -272,11 +341,13 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
     forkJoin({
       tipos: this.catalogosService.tiposPase(),
       talleres: this.catalogosService.talleres(),
+      talleresDestino: this.catalogosService.talleresDestino(),
       pase: pedirPase,
     }).subscribe({
       next: (respuesta) => {
         this.tiposPase.set(respuesta.tipos);
         this.talleres.set(respuesta.talleres);
+        this.talleresDestino.set(respuesta.talleresDestino);
 
         if (respuesta.pase !== null) {
           this.llenarConPase(respuesta.pase);
@@ -336,6 +407,7 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
       supervisor: textoOVacio(pase.supervisor),
       observaciones: textoOVacio(pase.observaciones),
       facturar_orden: pase.facturar_orden,
+      taller_destino_id: pase.taller_destino_id,
       detalle: [],
     };
 
@@ -394,11 +466,12 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
       next: (consulta) => {
         this.buscandoOrden.set(false);
 
-        // Integra no respondió: se deja llenar a mano
+        // Integra no respondió: sin verificar la orden no se puede crear el pase
         if (!consulta.disponible || consulta.orden === null) {
           this.resultadoBusqueda.set('no-disponible');
           this.mensajeBusqueda.set(
-            'No se pudo consultar Integra en este momento. Llene los datos a mano.',
+            'Integra no responde en este momento. Intente buscar la orden de nuevo en unos minutos: ' +
+            'el pase no se puede crear sin verificarla.',
           );
           return;
         }
@@ -484,6 +557,109 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
   }
 
   // ---------------------------------------------------------------------
+  // Imágenes
+  // Nada se sube al elegirlas: se suben al guardar el pase.
+  // ---------------------------------------------------------------------
+
+  protected elegirImagenes(evento: Event): void {
+    const selector = evento.target as HTMLInputElement;
+    const elegidas = Array.from(selector.files ?? []);
+    selector.value = '';   // para poder volver a elegir el mismo archivo
+
+    const avisos: string[] = [];
+    const aceptadas: ImagenNueva[] = [];
+
+    for (const archivo of elegidas) {
+      if (this.totalImagenes() + aceptadas.length >= MAXIMO_IMAGENES_POR_PASE) {
+        avisos.push('El pase puede tener máximo ' + MAXIMO_IMAGENES_POR_PASE + ' imágenes. No se agregó ' + archivo.name + '.');
+        continue;
+      }
+
+      const problema = revisarImagen(archivo);
+      if (problema !== '') {
+        avisos.push(problema);
+        continue;
+      }
+
+      aceptadas.push({ archivo: archivo, vistaPrevia: URL.createObjectURL(archivo) });
+    }
+
+    this.imagenesNuevas.set([...this.imagenesNuevas(), ...aceptadas]);
+    this.avisosImagenes.set(avisos);
+  }
+
+  // Quita una imagen elegida que todavía no se subió
+  protected descartarNueva(imagen: ImagenNueva): void {
+    URL.revokeObjectURL(imagen.vistaPrevia);
+    this.imagenesNuevas.set(this.imagenesNuevas().filter((otra) => otra !== imagen));
+  }
+
+  // Marca o desmarca una imagen que ya tiene el pase (se quita al guardar)
+  protected alternarQuitar(adjunto: Adjunto): void {
+    const id = adjunto.id_adjunto;
+    if (this.estaMarcadaParaQuitar(id)) {
+      this.idsParaQuitar.set(this.idsParaQuitar().filter((otro) => otro !== id));
+    } else {
+      this.idsParaQuitar.set([...this.idsParaQuitar(), id]);
+    }
+  }
+
+  protected estaMarcadaParaQuitar(idAdjunto: number): boolean {
+    return this.idsParaQuitar().includes(idAdjunto);
+  }
+
+  private limpiarImagenes(): void {
+    for (const imagen of this.imagenesNuevas()) {
+      URL.revokeObjectURL(imagen.vistaPrevia);
+    }
+    this.imagenesNuevas.set([]);
+    this.idsParaQuitar.set([]);
+    this.avisosImagenes.set([]);
+  }
+
+  ngOnDestroy(): void {
+    this.limpiarImagenes();
+  }
+
+  // Después de guardar los datos del pase: sube las nuevas y quita las marcadas,
+  // una petición detrás de otra (concat). Al terminar abre el detalle.
+  //
+  // Si algo falla aquí, el pase YA se guardó: se abre el detalle igual,
+  // con un aviso para que lo intente de nuevo desde Editar.
+  private guardarImagenes(idPase: number, aviso: AvisoAlAbrir): void {
+    const pasos: Observable<unknown>[] = [];
+
+    const archivos = this.imagenesNuevas().map((imagen) => imagen.archivo);
+    if (archivos.length > 0) {
+      pasos.push(this.pasesService.subirAdjuntos(idPase, archivos));
+    }
+    for (const idAdjunto of this.idsParaQuitar()) {
+      pasos.push(this.pasesService.quitarAdjunto(idPase, idAdjunto));
+    }
+
+    if (pasos.length === 0) {
+      this.guardando.set(false);
+      this.abrirDetalle(idPase, aviso);
+      return;
+    }
+
+    concat(...pasos).subscribe({
+      complete: () => {
+        this.guardando.set(false);
+        this.abrirDetalle(idPase, aviso);
+      },
+      error: (error: HttpErrorResponse) => {
+        this.guardando.set(false);
+        this.abrirDetalle(idPase, {
+          texto: 'El pase se guardó, pero hubo un problema con las imágenes: ' +
+            this.leerErrores(error)[0] + ' Puede intentarlo de nuevo desde Editar.',
+          tipo: 'advertencia',
+        });
+      },
+    });
+  }
+
+  // ---------------------------------------------------------------------
   // Guardar
   // ---------------------------------------------------------------------
 
@@ -497,6 +673,10 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
     }
     if (this.idTaller === null) {
       this.erroresGuardar.set(['Seleccione el taller (paso 2).']);
+      return;
+    }
+    if (tipo.lleva_destino && this.campos.taller_destino_id === null) {
+      this.erroresGuardar.set(['Seleccione a qué taller va la unidad (paso 2).']);
       return;
     }
 
@@ -514,6 +694,11 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
       datos.cliente = '';
       datos.codigo_cliente = '';
       datos.facturar_orden = false;
+    }
+
+    // El destino solo se envía en los tipos que lo piden (traslado)
+    if (!tipo.lleva_destino) {
+      datos.taller_destino_id = null;
     }
 
     // llenar articulos solo se envian en el tipo suministros
@@ -537,8 +722,7 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
   private crearPase(datos: DatosPase): void {
     this.pasesService.crear(datos).subscribe({
       next: (respuesta) => {
-        this.guardando.set(false);
-        this.abrirDetalle(respuesta.id_pase, this.avisoAlCrear(respuesta));
+        this.guardarImagenes(respuesta.id_pase, this.avisoAlCrear(respuesta));
       },
       error: (error: HttpErrorResponse) => {
         this.guardando.set(false);
@@ -550,13 +734,13 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
   private editarPase(idPase: number, datos: DatosPase): void {
     this.pasesService.editar(idPase, datos).subscribe({
       next: (respuesta) => {
-        this.guardando.set(false);
+        const cambiaronImagenes = this.imagenesNuevas().length > 0 || this.idsParaQuitar().length > 0;
 
         let aviso: AvisoAlAbrir = { texto: 'Los cambios se guardaron.', tipo: 'exito' };
-        if (respuesta.campos_modificados.length === 0) {
+        if (respuesta.campos_modificados.length === 0 && !cambiaronImagenes) {
           aviso = { texto: 'No hubo cambios en el pase.', tipo: 'info' };
         }
-        this.abrirDetalle(idPase, aviso);
+        this.guardarImagenes(idPase, aviso);
       },
       error: (error: HttpErrorResponse) => {
         this.guardando.set(false);
@@ -571,12 +755,10 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
       return { texto: 'El pase se creó y quedó autorizado.', tipo: 'exito' };
     }
 
-    const hayPendientesDelVehiculo = respuesta.ordenes_pendientes.some(
-      (orden) => orden.relacion === 'VEHICULO',
-    );
-    if (hayPendientesDelVehiculo) {
+    // Pendientes del vehículo o del cliente: solo un Administrador lo puede autorizar
+    if (respuesta.ordenes_pendientes.length > 0) {
       return {
-        texto: 'El pase se creó, pero no se podrá autorizar mientras el vehículo tenga otras órdenes sin facturar.',
+        texto: 'El pase se creó, pero el vehículo o el cliente tiene órdenes sin facturar: solo un Administrador podrá autorizarlo.',
         tipo: 'advertencia',
       };
     }
@@ -624,6 +806,8 @@ export class FormularioPase implements OnInit, ConCambiosSinGuardar {
       taller: this.idTaller,
       campos: this.campos,
       lineas: this.lineas,
+      imagenesNuevas: this.imagenesNuevas().map((imagen) => imagen.vistaPrevia),
+      imagenesParaQuitar: this.idsParaQuitar(),
     });
   }
 

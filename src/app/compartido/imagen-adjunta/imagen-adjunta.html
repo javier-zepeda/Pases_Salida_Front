@@ -1,0 +1,18 @@
+@switch (estado()) {
+  @case ('lista') {
+    <button type="button" class="imagen" (click)="abrirEnGrande()"
+            [title]="'Ver en grande: ' + (adjunto().nombre_archivo || 'imagen')">
+      <img [src]="direccion()" [alt]="adjunto().nombre_archivo || 'Imagen adjunta'">
+    </button>
+  }
+  @case ('cargando') {
+    <div class="imagen imagen--aviso">Cargando…</div>
+  }
+  @case ('anterior') {
+    <div class="imagen imagen--aviso">Imagen del sistema anterior (no migrada)</div>
+  }
+  @case ('error') {
+    <div class="imagen imagen--aviso">No se pudo cargar la imagen</div>
+  }
+}
+<p class="imagen__nombre" [title]="adjunto().nombre_archivo || ''">{{ adjunto().nombre_archivo || 'Sin nombre' }}</p>

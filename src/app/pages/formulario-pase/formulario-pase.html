@@ -4,7 +4,11 @@
     <a class="volver" [routerLink]="['/pases', idPase]">← Volver al pase</a>
     <div class="cabecera">
       <h1 class="cabecera__titulo">Editar pase {{ formatearNumeroPase(idPase) }}</h1>
-      <p class="cabecera__subtitulo">El tipo, la orden y el taller no se pueden cambiar</p>
+      @if (datosDeIntegraFijos()) {
+        <p class="cabecera__subtitulo">El tipo, la orden, el taller, el cliente y el vehículo (placa y chasis) vienen de la orden y no se pueden cambiar</p>
+      } @else {
+        <p class="cabecera__subtitulo">El tipo, la orden y el taller no se pueden cambiar</p>
+      }
     </div>
   } @else {
     <a class="volver" routerLink="/pases">← Volver al listado</a>
@@ -74,6 +78,22 @@
             </select>
           }
         </div>
+
+        <!-- Traslado: a qué taller va (cualquier taller activo, distinto del de salida).
+             Al editar sí se puede corregir. -->
+        @if (llevaDestino()) {
+          <div class="campo campo--mediano destino">
+            <label for="taller_destino">¿A qué taller va? *</label>
+            <select id="taller_destino" name="taller_destino" [(ngModel)]="campos.taller_destino_id">
+              <option [ngValue]="null" disabled>Seleccione el taller de destino</option>
+              @for (taller of opcionesDestino(); track taller.id_taller) {
+                <option [ngValue]="taller.id_taller">
+                  {{ taller.nombre }}{{ taller.sede ? ' · ' + taller.sede : '' }}
+                </option>
+              }
+            </select>
+          </div>
+        }
       </section>
 
       <!-- 3. Orden de trabajo (solo en los tipos que la requieren) -->
@@ -109,7 +129,7 @@
                 <div class="aviso aviso--exito campo--ancho" role="status">✓ {{ mensajeBusqueda() }}</div>
               }
               @case ('no-disponible') {
-                <div class="aviso aviso--info campo--ancho" role="status">{{ mensajeBusqueda() }}</div>
+                <div class="aviso aviso--advertencia campo--ancho" role="status">{{ mensajeBusqueda() }}</div>
               }
               @case ('no-existe') {
                 <div class="aviso aviso--advertencia campo--ancho" role="status">{{ mensajeBusqueda() }}</div>
@@ -119,46 +139,49 @@
               }
             }
 
-            <!-- Otras órdenes sin facturar (solo en los tipos que lo revisan) -->
-            @if (pendientesDelVehiculo().length > 0) {
+            <!-- Otras órdenes sin facturar (solo en los tipos que lo revisan).
+                 Las del vehículo y las del cliente bloquean la autorización. -->
+            @if (pendientesDelVehiculo().length > 0 || pendientesDelCliente().length > 0) {
               <div class="aviso aviso--advertencia campo--ancho pendientes">
-                <strong>⚠ Este vehículo tiene otras órdenes sin facturar</strong>
-                <p>Puede crear el pase, pero no se podrá autorizar hasta que se revisen:</p>
-                <ul>
-                  @for (orden of pendientesDelVehiculo(); track orden.numero_orden) {
-                    <li>
-                      <strong>{{ orden.numero_orden }}</strong> · {{ orden.estado }}
-                      @if (orden.fecha_apertura) {
-                        · abierta el {{ orden.fecha_apertura | date: 'dd/MM/yyyy' }}
-                      }
-                    </li>
-                  }
-                </ul>
-              </div>
-            }
+                <strong>⚠ El vehículo o el cliente tiene órdenes sin facturar</strong>
+                <p>Puede crear el pase, pero solo un Administrador podrá autorizarlo mientras estén pendientes.</p>
 
-            @if (pendientesDelCliente().length > 0) {
-              <div class="aviso aviso--info campo--ancho pendientes">
-                <strong>El cliente tiene órdenes abiertas en otros vehículos</strong>
-                <ul>
-                  @for (orden of pendientesDelCliente(); track orden.numero_orden) {
-                    <li>
-                      <strong>{{ orden.numero_orden }}</strong> · {{ orden.placa || 'Sin placa' }} · {{ orden.estado }}
-                    </li>
-                  }
-                </ul>
+                @if (pendientesDelVehiculo().length > 0) {
+                  <p class="pendientes__grupo">Del vehículo:</p>
+                  <ul>
+                    @for (orden of pendientesDelVehiculo(); track orden.numero_orden) {
+                      <li>
+                        <strong>{{ orden.numero_orden }}</strong> · {{ orden.estado }}
+                        @if (orden.fecha_apertura) {
+                          · abierta el {{ orden.fecha_apertura | date: 'dd/MM/yyyy' }}
+                        }
+                      </li>
+                    }
+                  </ul>
+                }
+
+                @if (pendientesDelCliente().length > 0) {
+                  <p class="pendientes__grupo">Del cliente en otros vehículos:</p>
+                  <ul>
+                    @for (orden of pendientesDelCliente(); track orden.numero_orden) {
+                      <li>
+                        <strong>{{ orden.numero_orden }}</strong> · {{ orden.placa || 'Sin placa' }} · {{ orden.estado }}
+                      </li>
+                    }
+                  </ul>
+                }
               </div>
             }
 
             <div class="campo">
               <label for="codigo_cliente">Código de cliente</label>
               <input id="codigo_cliente" name="codigo_cliente" maxlength="20"
-                     [(ngModel)]="campos.codigo_cliente">
+                     [(ngModel)]="campos.codigo_cliente" [disabled]="datosDeIntegraFijos()">
             </div>
             <div class="campo campo--ancho">
               <label for="cliente">Cliente *</label>
               <input id="cliente" name="cliente" maxlength="400"
-                     [(ngModel)]="campos.cliente">
+                     [(ngModel)]="campos.cliente" [disabled]="datosDeIntegraFijos()">
             </div>
             <label class="casilla campo--ancho">
               <input type="checkbox" name="facturar_orden" [(ngModel)]="campos.facturar_orden">
@@ -177,7 +200,7 @@
           <div class="campo">
             <label for="placa">Placa *</label>
             <input id="placa" name="placa" maxlength="60" class="mayusculas"
-                   [(ngModel)]="campos.placa" placeholder="Ej. C123ABC">
+                   [(ngModel)]="campos.placa" [disabled]="datosDeIntegraFijos()" placeholder="Ej. C123ABC">
           </div>
           <div class="campo">
             <label for="tipo_vehiculo">Tipo de vehículo *</label>
@@ -192,7 +215,7 @@
           <div class="campo">
             <label for="chasis">Chasis</label>
             <input id="chasis" name="chasis" maxlength="60" class="mayusculas"
-                   [(ngModel)]="campos.chasis">
+                   [(ngModel)]="campos.chasis" [disabled]="datosDeIntegraFijos()">
           </div>
         </div>
       </section>
@@ -267,6 +290,75 @@
               ＋ Agregar artículo
             </button>
             <span class="articulos__contador">{{ lineas.length }} de {{ maximoArticulos }}</span>
+          </div>
+        </section>
+      }
+
+      <!-- Imágenes (capturas de pantalla o fotos de respaldo) -->
+      @if (puedeAdjuntar()) {
+        <section class="tarjeta seccion">
+          <h2 class="seccion__titulo">
+            <span class="seccion__numero">{{ numeroSeccionImagenes() }}</span> Imágenes
+          </h2>
+          <p class="imagenes__ayuda">
+            Capturas de pantalla o fotos de respaldo. JPG, PNG o WEBP de máximo {{ tamanoMaximoMb }} MB cada una.
+            Se suben al guardar el pase.
+          </p>
+
+          @if (totalImagenes() > 0 || adjuntosActuales().length > 0) {
+            <div class="galeria imagenes__galeria">
+              <!-- Las que el pase ya tiene (al editar) -->
+              @if (idPaseEditar(); as idPase) {
+                @for (adjunto of adjuntosActuales(); track adjunto.id_adjunto) {
+                  <div class="imagen-editable" [class.imagen-editable--quitada]="estaMarcadaParaQuitar(adjunto.id_adjunto)">
+                    <app-imagen-adjunta [idPase]="idPase" [adjunto]="adjunto" />
+                    @if (estaMarcadaParaQuitar(adjunto.id_adjunto)) {
+                      <p class="imagen-editable__estado">Se quitará al guardar</p>
+                    }
+                    <button type="button" class="imagen-editable__boton" (click)="alternarQuitar(adjunto)">
+                      {{ estaMarcadaParaQuitar(adjunto.id_adjunto) ? 'Deshacer' : 'Quitar' }}
+                    </button>
+                  </div>
+                }
+              }
+
+              <!-- Las nuevas, todavía sin subir -->
+              @for (imagen of imagenesNuevas(); track imagen.vistaPrevia) {
+                <div class="imagen-editable">
+                  <div class="vista-previa">
+                    <img [src]="imagen.vistaPrevia" [alt]="imagen.archivo.name">
+                    <span class="vista-previa__etiqueta">Nueva</span>
+                  </div>
+                  <p class="imagen-editable__nombre" [title]="imagen.archivo.name">
+                    {{ imagen.archivo.name }} · {{ formatearTamano(imagen.archivo.size) }}
+                  </p>
+                  <button type="button" class="imagen-editable__boton" (click)="descartarNueva(imagen)">Descartar</button>
+                </div>
+              }
+            </div>
+          }
+
+          @if (avisosImagenes().length > 0) {
+            <div class="aviso aviso--advertencia imagenes__avisos" role="alert">
+              <strong>Algunas imágenes no se agregaron:</strong>
+              <ul>
+                @for (aviso of avisosImagenes(); track $index) {
+                  <li>{{ aviso }}</li>
+                }
+              </ul>
+            </div>
+          }
+
+          <div class="articulos__pie">
+            <!-- El selector de archivos real está oculto; el botón lo abre -->
+            <input #selectorImagenes type="file" class="selector-oculto" multiple
+                   [accept]="tiposImagenAceptados" (change)="elegirImagenes($event)">
+            <button type="button" class="boton boton--secundario"
+                    (click)="selectorImagenes.click()"
+                    [disabled]="totalImagenes() >= maximoImagenes">
+              ＋ Agregar imágenes
+            </button>
+            <span class="articulos__contador">{{ totalImagenes() }} de {{ maximoImagenes }}</span>
           </div>
         </section>
       }

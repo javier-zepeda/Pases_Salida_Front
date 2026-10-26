@@ -67,6 +67,40 @@
   border-radius: var(--radio);
 }
 
+/* Ventana de pendientes: dos números grandes (vehículo y cliente).
+   El total del cliente incluye las del vehículo, porque el vehículo es del cliente. */
+.conteo-pendientes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 4px 0 16px;
+}
+
+.conteo-pendientes__caja {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  /* Las dos bloquean la autorización: las dos se resaltan */
+  background: var(--advertencia-fondo);
+  border: 1px solid var(--creado);
+  border-radius: var(--radio);
+  text-align: center;
+}
+
+.conteo-pendientes__numero {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--texto);
+}
+
+.conteo-pendientes__texto {
+  font-size: 13px;
+  color: var(--texto-secundario);
+}
+
 /* ── Distribución: datos a la izquierda, historial a la derecha ─────────── */
 .distribucion {
   display: grid;
@@ -184,27 +218,6 @@
 .articulos .articulos__numero {
   text-align: right;
   font-variant-numeric: tabular-nums;
-}
-
-/* ── Adjuntos ───────────────────────────────────────────────────────────── */
-.adjuntos {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.adjuntos li {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.adjuntos .datos__fecha {
-  display: inline;
 }
 
 /* ── Historial (línea de tiempo) ────────────────────────────────────────── */

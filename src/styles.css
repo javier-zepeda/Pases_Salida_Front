@@ -328,3 +328,10 @@ h1, h2, h3 {
     width: 100%;
   }
 }
+
+/* ── Galería de imágenes adjuntas (detalle y formulario) ────────────────── */
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}

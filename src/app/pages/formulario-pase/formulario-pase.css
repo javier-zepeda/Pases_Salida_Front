@@ -211,6 +211,12 @@
   margin-bottom: 4px;
 }
 
+/* "Del vehículo:" / "Del cliente en otros vehículos:" */
+.pendientes .pendientes__grupo {
+  margin-top: 10px;
+  font-weight: 500;
+}
+
 /* ── Artículos (suministros) ── */
 .articulos {
   display: flex;
@@ -297,4 +303,108 @@
 .tipo--fijo:hover {
   cursor: default;
   max-width: 320px;
+}
+
+/* ── Imágenes ───────────────────────────────────────────────────────────── */
+.imagenes__ayuda {
+  margin: -4px 0 14px;
+  font-size: 14px;
+  color: var(--texto-secundario);
+}
+
+.imagenes__galeria {
+  margin-bottom: 4px;
+}
+
+.imagenes__avisos {
+  margin-top: 12px;
+}
+
+.imagenes__avisos ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+/* El <input type="file"> se oculta; lo abre el botón "Agregar imágenes" */
+.selector-oculto {
+  display: none;
+}
+
+/* Miniatura con su botón (Quitar / Descartar) */
+.imagen-editable {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.imagen-editable--quitada app-imagen-adjunta {
+  opacity: 0.35;
+}
+
+.imagen-editable__estado {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--anulado);
+}
+
+.imagen-editable__nombre {
+  margin: 0;
+  font-size: 12px;
+  color: var(--texto-secundario);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.imagen-editable__boton {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--blanco);
+  color: var(--texto-secundario);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.imagen-editable__boton:hover {
+  border-color: var(--rojo-intenso);
+  color: var(--rojo-intenso);
+}
+
+/* Vista previa de una imagen nueva (mismo tamaño que app-imagen-adjunta) */
+.vista-previa {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border: 2px dashed var(--info);
+  border-radius: var(--radio);
+  overflow: hidden;
+  background: var(--fondo);
+}
+
+.vista-previa img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.vista-previa__etiqueta {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--info);
+  color: var(--blanco);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Taller de destino (traslado): debajo del taller de salida */
+.destino {
+  margin-top: 14px;
 }

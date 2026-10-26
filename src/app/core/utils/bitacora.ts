@@ -23,6 +23,7 @@ const NOMBRES_DE_CAMPOS: Record<string, string> = {
   supervisor: 'Supervisor',
   observaciones: 'Observaciones',
   facturar_orden: 'Facturar orden',
+  taller_destino: 'Taller de destino',
   detalle: 'Artículos'
 };
 
@@ -44,6 +45,21 @@ export function describirMovimiento(registro: RegistroBitacora): MovimientoLegib
       lineas.push('Motivo: ' + detalle.motivo);
     }
     return { titulo: 'Anuló el pase', lineas: lineas, tipo: 'anular' };
+  }
+  if (registro.accion === 'ADJUNTAR') {
+    const archivos = Array.isArray(detalle.archivos) ? detalle.archivos : [];
+    let titulo = 'Adjuntó ' + archivos.length + ' imágenes';
+    if (archivos.length === 1) {
+      titulo = 'Adjuntó una imagen';
+    }
+    return { titulo: titulo, lineas: archivos, tipo: 'editar' };
+  }
+  if (registro.accion === 'QUITAR_ADJUNTO') {
+    const lineas: string[] = [];
+    if (detalle.archivo) {
+      lineas.push(detalle.archivo);
+    }
+    return { titulo: 'Quitó una imagen', lineas: lineas, tipo: 'editar' };
   }
   if (registro.accion === 'MIGRACION') {
     return { titulo: 'Pase traído del sistema anterior', lineas: [], tipo: 'sistema' };

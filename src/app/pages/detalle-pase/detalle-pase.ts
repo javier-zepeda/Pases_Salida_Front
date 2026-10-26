@@ -8,6 +8,7 @@ import { SesionService } from '../../core/services/sesion.service';
 import { PaseDetalle, OrdenPendiente, ErrorAutorizar, AvisoAlAbrir, ESTADO_CREADO, ESTADO_AUTORIZADO, ESTADO_ANULADO } from '../../core/models/pase.model';
 import { formatearNumeroPase, claseDeEstado } from '../../core/utils/formato';
 import { describirMovimiento, MovimientoLegible } from '../../core/utils/bitacora';
+import { ImagenAdjunta } from '../../compartido/imagen-adjunta/imagen-adjunta';
 
 // Qué ventana de confirmación está abierta
 type Dialogo = 'ninguno' | 'autorizar' | 'pendientes' | 'anular';
@@ -18,7 +19,7 @@ const LARGO_MAXIMO_MOTIVO = 500;
 
 @Component({
   selector: 'app-detalle-pase',
-  imports: [FormsModule, RouterLink, DatePipe, DecimalPipe],
+  imports: [FormsModule, RouterLink, DatePipe, DecimalPipe, ImagenAdjunta],
   templateUrl: './detalle-pase.html',
   styleUrl: './detalle-pase.css'
 })
@@ -48,7 +49,6 @@ export class DetallePase implements OnInit {
   protected mensajeExito = signal('');
   protected tipoMensaje = signal<AvisoAlAbrir['tipo']>('exito');   // color del aviso de arriba
   protected ordenesPendientes = signal<OrdenPendiente[]>([]);   // las que muestra el diálogo
-  protected advertenciasCliente = signal<OrdenPendiente[]>([]); // después de autorizar
   protected motivoAnulacion = '';                               // enlazado con [(ngModel)]
   protected generandoPdf = signal(false);
 
@@ -194,7 +194,6 @@ export class DetallePase implements OnInit {
         this.procesando.set(false);
         this.cerrarDialogo();
         this.mostrarMensaje('El pase quedó autorizado.', 'exito');
-        this.advertenciasCliente.set(respuesta.advertencias);
         this.cargarPase();
       },
       error: (error: HttpErrorResponse) => {
@@ -204,7 +203,7 @@ export class DetallePase implements OnInit {
     });
   }
 
-  // El back responde 409 con la lista de órdenes cuando el vehículo tiene pendientes:
+  // El back responde 409 con la lista de órdenes cuando el vehículo o el cliente tiene pendientes:
   //   - requiere_confirmacion = true → el usuario puede autorizar de todas formas
   //   - sin requiere_confirmacion   → el usuario no tiene permiso para hacerlo
   private manejarErrorAutorizar(error: HttpErrorResponse): void {
@@ -250,7 +249,6 @@ export class DetallePase implements OnInit {
         this.procesando.set(false);
         this.cerrarDialogo();
         this.mostrarMensaje('El pase quedó anulado.', 'exito');
-        this.advertenciasCliente.set([]);
         this.cargarPase();
       },
       error: (error: HttpErrorResponse) => {
@@ -316,7 +314,6 @@ export class DetallePase implements OnInit {
   private prepararDialogo(): void {
     this.errorDialogo.set('');
     this.mensajeExito.set('');
-    this.advertenciasCliente.set([]);
     this.ordenesPendientes.set([]);
     this.puedeConfirmarPendientes.set(false);
   }

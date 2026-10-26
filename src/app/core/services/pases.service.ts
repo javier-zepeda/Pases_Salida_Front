@@ -65,4 +65,26 @@ export class PasesService {
     return this.http.put<RespuestaEditar>(this.urlBase + '/' + idPase, datos);
   }
 
+  // POST /api/pases/:id/adjuntos
+  // Los archivos viajan en un FormData (como un formulario HTML), campo "imagenes".
+  // No se pone Content-Type: el navegador lo arma solo con el separador correcto.
+  subirAdjuntos(idPase: number, archivos: File[]): Observable<{ mensaje: string }> {
+    const formulario = new FormData();
+    for (const archivo of archivos) {
+      formulario.append('imagenes', archivo, archivo.name);
+    }
+    return this.http.post<{ mensaje: string }>(this.urlBase + '/' + idPase + '/adjuntos', formulario);
+  }
+
+  // GET /api/pases/:id/adjuntos/:idAdjunto → la imagen llega como archivo (Blob).
+  // No se usa <img src="..."> directo porque así no se manda el token.
+  obtenerImagen(idPase: number, idAdjunto: number): Observable<Blob> {
+    return this.http.get(this.urlBase + '/' + idPase + '/adjuntos/' + idAdjunto, { responseType: 'blob' });
+  }
+
+  // DELETE /api/pases/:id/adjuntos/:idAdjunto → la quita del pase (queda guardada como inactiva)
+  quitarAdjunto(idPase: number, idAdjunto: number): Observable<{ mensaje: string }> {
+    return this.http.delete<{ mensaje: string }>(this.urlBase + '/' + idPase + '/adjuntos/' + idAdjunto);
+  }
+
 }

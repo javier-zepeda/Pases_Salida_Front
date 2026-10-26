@@ -48,16 +48,6 @@
     @if (mensajeExito()) {
       <div [class]="'aviso aviso--espacio aviso--' + tipoMensaje()" role="status">{{ mensajeExito() }}</div>
     }
-    @if (advertenciasCliente().length > 0) {
-      <div class="aviso aviso--advertencia aviso--espacio">
-        <strong>Atención:</strong> el cliente tiene otras órdenes sin facturar en otros vehículos.
-        <ul class="lista-ordenes">
-          @for (orden of advertenciasCliente(); track orden.numero_orden) {
-            <li><strong>{{ orden.numero_orden }}</strong> · {{ orden.placa || 'Sin placa' }} · {{ orden.estado }}</li>
-          }
-        </ul>
-      </div>
-    }
 
     <!-- Si está anulado, se explica arriba de todo -->
     @if (pase.estado_id === estadoAnulado) {
@@ -89,6 +79,16 @@
               <div class="datos__ancho"><dt>Cliente</dt><dd>{{ pase.cliente || '—' }}</dd></div>
               <div><dt>Código de cliente</dt><dd>{{ pase.codigo_cliente || '—' }}</dd></div>
               <div><dt>Facturar orden</dt><dd>{{ pase.facturar_orden ? 'Sí' : 'No' }}</dd></div>
+            </dl>
+          </section>
+        }
+
+        @if (pase.lleva_destino) {
+          <section class="tarjeta seccion">
+            <h2 class="seccion__titulo">Traslado</h2>
+            <dl class="datos">
+              <div><dt>Sale de</dt><dd>{{ pase.taller || '—' }}</dd></div>
+              <div><dt>Taller destino</dt><dd class="datos__destacado">{{ pase.taller_destino || 'No registrado' }}</dd></div>
             </dl>
           </section>
         }
@@ -169,20 +169,15 @@
         </section>
 
         <section class="tarjeta seccion">
-          <h2 class="seccion__titulo">Fotos y adjuntos</h2>
+          <h2 class="seccion__titulo">Imágenes</h2>
           @if (pase.adjuntos.length === 0) {
-            <p class="seccion__vacio">Este pase no tiene adjuntos.</p>
+            <p class="seccion__vacio">Este pase no tiene imágenes.</p>
           } @else {
-            <ul class="adjuntos">
+            <div class="galeria">
               @for (adjunto of pase.adjuntos; track adjunto.id_adjunto) {
-                <li>
-                  <span aria-hidden="true">📎</span>
-                  {{ adjunto.nombre_archivo || 'Archivo sin nombre' }}
-                  <span class="datos__fecha">{{ adjunto.fecha_subida | date: 'dd/MM/yyyy' }}</span>
-                </li>
+                <app-imagen-adjunta [idPase]="pase.id_pase" [adjunto]="adjunto" />
               }
-            </ul>
-            <p class="seccion__nota">Los archivos se podrán abrir cuando estén en el nuevo almacenamiento.</p>
+            </div>
           }
         </section>
       </div>
@@ -239,23 +234,38 @@
             }
 
             @case ('pendientes') {
-              <h2 class="dialogo__titulo">El vehículo tiene otras órdenes sin facturar</h2>
-              <p>Antes de dejarlo salir, confirme que estas órdenes ya se cobraron o que pueden quedar abiertas:</p>
+              <h2 class="dialogo__titulo">⚠ Advertencia: órdenes pendientes</h2>
+              <p>El vehículo o el cliente tiene órdenes de trabajo sin facturar.</p>
 
-              <ul class="lista-ordenes lista-ordenes--bloquea">
-                @for (orden of pendientesDelVehiculo(); track orden.numero_orden) {
-                  <li>
-                    <strong>{{ orden.numero_orden }}</strong> · {{ orden.estado }}
-                    @if (orden.fecha_apertura) {
-                      · abierta el {{ orden.fecha_apertura | date: 'dd/MM/yyyy' }}
-                    }
-                  </li>
-                }
-              </ul>
+              <!-- Resumen: cuántas del vehículo y cuántas del cliente en todos los talleres -->
+              <div class="conteo-pendientes">
+                <div class="conteo-pendientes__caja">
+                  <span class="conteo-pendientes__numero">{{ pendientesDelVehiculo().length }}</span>
+                  <span class="conteo-pendientes__texto">Órdenes pendientes del vehículo</span>
+                </div>
+                <div class="conteo-pendientes__caja">
+                  <span class="conteo-pendientes__numero">{{ ordenesPendientes().length }}</span>
+                  <span class="conteo-pendientes__texto">Órdenes pendientes del cliente a nivel nacional</span>
+                </div>
+              </div>
+
+              @if (pendientesDelVehiculo().length > 0) {
+                <p class="dialogo__nota">Órdenes del vehículo:</p>
+                <ul class="lista-ordenes lista-ordenes--bloquea">
+                  @for (orden of pendientesDelVehiculo(); track orden.numero_orden) {
+                    <li>
+                      <strong>{{ orden.numero_orden }}</strong> · {{ orden.estado }}
+                      @if (orden.fecha_apertura) {
+                        · abierta el {{ orden.fecha_apertura | date: 'dd/MM/yyyy' }}
+                      }
+                    </li>
+                  }
+                </ul>
+              }
 
               @if (pendientesDelCliente().length > 0) {
-                <p class="dialogo__nota">El cliente también tiene órdenes abiertas en otros vehículos:</p>
-                <ul class="lista-ordenes">
+                <p class="dialogo__nota">Órdenes del cliente en otros vehículos:</p>
+                <ul class="lista-ordenes lista-ordenes--bloquea">
                   @for (orden of pendientesDelCliente(); track orden.numero_orden) {
                     <li><strong>{{ orden.numero_orden }}</strong> · {{ orden.placa || 'Sin placa' }} · {{ orden.estado }}</li>
                   }
