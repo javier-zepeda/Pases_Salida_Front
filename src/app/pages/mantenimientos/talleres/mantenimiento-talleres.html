@@ -1,0 +1,158 @@
+<div class="contenedor">
+
+  <!-- Título y acción principal -->
+  <div class="cabecera">
+    <div>
+      <h1 class="cabecera__titulo">Talleres</h1>
+      <p class="cabecera__subtitulo">Talleres que se pueden elegir en los pases de salida</p>
+    </div>
+
+    @if (puedeEditar()) {
+      <button type="button" class="boton boton--principal" (click)="abrirNuevo()">
+        <span aria-hidden="true">＋</span> Nuevo taller
+      </button>
+    }
+  </div>
+
+  <!-- Filtros -->
+  <section class="tarjeta filtros" aria-label="Filtros">
+    <div class="filtros__estados" role="group" aria-label="Filtrar por estado">
+      <button type="button" class="chip" [class.chip--activo]="filtroEstado() === 'activos'" (click)="filtroEstado.set('activos')">Activos</button>
+      <button type="button" class="chip" [class.chip--activo]="filtroEstado() === 'inactivos'" (click)="filtroEstado.set('inactivos')">Inactivos</button>
+      <button type="button" class="chip" [class.chip--activo]="filtroEstado() === 'todos'" (click)="filtroEstado.set('todos')">Todos</button>
+    </div>
+
+    <div class="filtros__busqueda">
+      <label for="busqueda" class="solo-lector">Buscar taller</label>
+      <input id="busqueda" type="search" placeholder="Buscar por nombre, código o sede"
+             [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)">
+    </div>
+  </section>
+
+  <!-- Resultado de la última acción -->
+  @if (aviso(); as avisoActual) {
+    <div class="aviso aviso-pantalla" [class.aviso--exito]="avisoActual.tipo === 'exito'" [class.aviso--error]="avisoActual.tipo === 'error'" role="status">
+      {{ avisoActual.texto }}
+      <button type="button" class="aviso-pantalla__cerrar" (click)="aviso.set(null)" aria-label="Cerrar aviso">✕</button>
+    </div>
+  }
+
+  <!-- Tabla -->
+  @if (errorCarga()) {
+    <div class="aviso aviso--error aviso-pantalla">
+      {{ errorCarga() }}
+      <button type="button" class="boton boton--secundario" (click)="cargarDatos()">Reintentar</button>
+    </div>
+  } @else if (cargando() && talleres().length === 0) {
+    <div class="tarjeta vacio">Cargando talleres…</div>
+  } @else if (talleresFiltrados().length === 0) {
+    <div class="tarjeta vacio">No hay talleres que coincidan.</div>
+  } @else {
+    <section class="tarjeta resultados">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Taller</th>
+            <th>Código</th>
+            <th>Sede</th>
+            <th>Usuarios</th>
+            <th>Estado</th>
+            <th><span class="solo-lector">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (taller of talleresFiltrados(); track taller.id_taller) {
+            <tr [class.tabla__inactiva]="!taller.activo">
+              <td data-etiqueta="Taller" class="tabla__nombre">{{ taller.nombre }}</td>
+              <td data-etiqueta="Código">{{ taller.codigo || '—' }}</td>
+              <td data-etiqueta="Sede">
+                <div>
+                  {{ taller.sede || 'Sin sede' }}
+                  @if (taller.sede_activa === false) {
+                    <span class="tabla__tenue">Sede inactiva</span>
+                  }
+                </div>
+              </td>
+              <td data-etiqueta="Usuarios" class="tabla__numero">{{ taller.usuarios }}</td>
+              <td data-etiqueta="Estado">
+                <span class="estado" [class.estado--activo]="taller.activo" [class.estado--inactivo]="!taller.activo">
+                  {{ taller.activo ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td>
+                @if (puedeEditar()) {
+                  <div class="acciones-fila">
+                    <button type="button" class="boton boton--secundario" (click)="abrirEdicion(taller)">Editar</button>
+                    <button type="button" class="boton"
+                            [class.boton--peligro]="taller.activo"
+                            [class.boton--secundario]="!taller.activo"
+                            [disabled]="idCambiandoEstado() === taller.id_taller || motivoNoActivar(taller) !== ''"
+                            [title]="motivoNoActivar(taller)"
+                            (click)="cambiarEstado(taller)">
+                      {{ taller.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+
+  <!-- Ventana para crear o editar -->
+  @if (formularioAbierto()) {
+    <div class="fondo-dialogo" (click)="cerrarFormulario()">
+      <form class="dialogo formulario" role="dialog" aria-modal="true" aria-labelledby="titulo-formulario"
+            (click)="$event.stopPropagation()" (ngSubmit)="guardar()" (keydown.escape)="cerrarFormulario()">
+
+        <h2 id="titulo-formulario" class="dialogo__titulo">
+          {{ tallerEnEdicion() === null ? 'Nuevo taller' : 'Editar taller' }}
+        </h2>
+
+        <div class="campo">
+          <label for="nombre">Nombre *</label>
+          <input id="nombre" name="nombre" class="mayusculas" maxlength="100" autocomplete="off"
+                 placeholder="Ej. Taller Zona 7" [(ngModel)]="datos.nombre">
+        </div>
+
+        <div class="campo">
+          <label for="codigo">Código *</label>
+          <input id="codigo" name="codigo" class="mayusculas" maxlength="10" autocomplete="off"
+                 placeholder="Ej. Z07" [(ngModel)]="datos.codigo">
+          <span class="campo__ayuda">Código del taller en Integra. Solo letras y números.</span>
+        </div>
+
+        <div class="campo">
+          <label for="sede">Sede *</label>
+          <select id="sede" name="sede" [(ngModel)]="datos.sede_id">
+            <option [ngValue]="null" disabled>Seleccione la sede</option>
+            @for (sede of opcionesSede(); track sede.id_sede) {
+              <option [ngValue]="sede.id_sede">{{ sede.nombre }}{{ sede.activo ? '' : ' (inactiva)' }}</option>
+            }
+          </select>
+        </div>
+
+        @if (erroresFormulario().length > 0) {
+          <div class="aviso aviso--error errores" role="alert">
+            Revise lo siguiente:
+            <ul>
+              @for (error of erroresFormulario(); track $index) {
+                <li>{{ error }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <div class="dialogo__botones">
+          <button type="button" class="boton boton--secundario" (click)="cerrarFormulario()" [disabled]="guardando()">Cancelar</button>
+          <button type="submit" class="boton boton--principal" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+</div>

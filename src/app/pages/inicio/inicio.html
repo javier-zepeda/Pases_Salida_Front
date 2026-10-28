@@ -1,0 +1,109 @@
+<div class="contenedor">
+
+  <!-- Saludo -->
+  <div class="cabecera">
+    <h1 class="cabecera__titulo">Inicio</h1>
+    @if (nombreUsuario()) {
+      <p class="cabecera__subtitulo">Bienvenido, {{ nombreUsuario() }}</p>
+    }
+  </div>
+
+  <!-- Tarjetas con números -->
+  @if (errorResumen()) {
+    <div class="aviso aviso--error mensaje">
+      No se pudieron cargar los totales.
+      <button type="button" class="boton boton--secundario" (click)="cargarResumen()">Reintentar</button>
+    </div>
+  } @else {
+    <section class="tarjetas" aria-label="Resumen">
+      @if (resumen() === null) {
+        <!-- Mientras carga: tarjetas vacías del mismo tamaño para que la página no salte -->
+        @for (i of [1, 2]; track i) {
+          <div class="tarjeta indicador indicador--cargando" aria-hidden="true"></div>
+        }
+      }
+
+      @for (tarjeta of tarjetas(); track tarjeta.titulo) {
+        <a class="tarjeta indicador" [class]="'indicador--' + tarjeta.color"
+           [routerLink]="tarjeta.ruta" [queryParams]="tarjeta.filtros">
+          <div class="indicador__cuerpo">
+            <div>
+              <p class="indicador__numero">{{ tarjeta.numero | number }}</p>
+              <p class="indicador__titulo">{{ tarjeta.titulo }}</p>
+            </div>
+
+            <svg class="indicador__icono" viewBox="0 0 24 24" aria-hidden="true">
+              @switch (tarjeta.icono) {
+                @case ('pases') {
+                  <path d="M3 7h11v9H3z" /><path d="M14 10h4l3 3v3h-7" /><circle cx="7" cy="17.5" r="1.8" /><circle cx="17" cy="17.5" r="1.8" />
+                }
+                @case ('reloj') {
+                  <circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" />
+                }
+                @case ('sede') {
+                  <path d="M4 21V5l8-2v18" /><path d="M12 9l8 3v9" /><path d="M2 21h20" /><path d="M8 8v1M8 12v1M8 16v1M16 15v1" />
+                }
+                @case ('taller') {
+                  <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z" />
+                }
+              }
+            </svg>
+          </div>
+          <span class="indicador__pie">Ver más <span aria-hidden="true">→</span></span>
+        </a>
+      }
+    </section>
+  }
+
+  <!-- Pases por autorizar -->
+  <section class="tarjeta pendientes">
+    <div class="pendientes__cabecera">
+      <h2 class="pendientes__titulo">Pases por autorizar</h2>
+      <a class="pendientes__enlace" routerLink="/pases" [queryParams]="{ estado: ESTADO_CREADO }">
+        Ver todos <span aria-hidden="true">→</span>
+      </a>
+    </div>
+
+    @if (errorPases()) {
+      <div class="aviso aviso--error mensaje pendientes__aviso">
+        No se pudieron cargar los pases.
+        <button type="button" class="boton boton--secundario" (click)="cargarPases()">Reintentar</button>
+      </div>
+    } @else if (cargandoPases()) {
+      <p class="vacio">Cargando pases…</p>
+    } @else if (pases().length === 0) {
+      <p class="vacio">No hay pases pendientes de autorizar. 🎉</p>
+    } @else {
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>No. de Pase</th>
+            <th>Tipo de Pase</th>
+            <th>No. de Orden</th>
+            <th>Cliente / Piloto</th>
+            <th>Vehículo</th>
+            <th>Taller</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (pase of pases(); track pase.id_pase) {
+            <tr class="tabla__fila" tabindex="0" (click)="abrirPase(pase)" (keydown.enter)="abrirPase(pase)">
+              <td data-etiqueta="Pase" class="tabla__numero">{{ formatearNumeroPase(pase.id_pase) }}</td>
+              <td data-etiqueta="Tipo">{{ pase.tipo_pase }}</td>
+              <td data-etiqueta="Orden">{{ pase.numero_orden || '—' }}</td>
+              <td data-etiqueta="Cliente / Piloto" class="tabla__cliente">{{ pase.cliente || pase.piloto || '—' }}</td>
+              <td data-etiqueta="Vehículo">
+                <span class="tabla__placa">{{ pase.placa || '—' }}</span>
+                <span class="tabla__tenue">{{ pase.marca }}</span>
+              </td>
+              <td data-etiqueta="Taller">{{ pase.taller || '—' }}</td>
+              <td data-etiqueta="Fecha">{{ pase.fecha_creacion | date: 'dd/MM/yyyy' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+
+</div>

@@ -5,11 +5,24 @@
 
 <nav class="barra" [class.barra--colapsada]="colapsada()" [class.barra--abierta]="abiertaEnCelular()" aria-label="Menú principal">
 
-  <button type="button" class="barra__colapsar" (click)="alternarColapsada()"
-          [attr.aria-label]="colapsada() ? 'Expandir menú' : 'Colapsar menú'"
-          [title]="colapsada() ? 'Expandir menú' : 'Colapsar menú'">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
-  </button>
+  <div class="barra__arriba">
+    <!-- Usuario actual (si la aplicación lo manda) -->
+    @if (usuario(); as usuarioActual) {
+      <div class="barra__usuario" [title]="usuarioActual.nombreCompleto + ' · ' + usuarioActual.detalle">
+        <span class="barra__avatar" aria-hidden="true">{{ usuarioActual.iniciales }}</span>
+        <span class="barra__usuario-textos">
+          <span class="barra__usuario-nombre">{{ usuarioActual.nombre }}</span>
+          <span class="barra__usuario-detalle">{{ usuarioActual.detalle }}</span>
+        </span>
+      </div>
+    }
+
+    <button type="button" class="barra__colapsar" (click)="alternarColapsada()"
+            [attr.aria-label]="colapsada() ? 'Expandir menú' : 'Colapsar menú'"
+            [title]="colapsada() ? 'Expandir menú' : 'Colapsar menú'">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+    </button>
+  </div>
 
   <div class="barra__secciones">
     @for (seccion of secciones(); track seccion.titulo) {
@@ -35,7 +48,7 @@
 <ng-template #plantillaOpcion let-opcion>
   @if (opcion.ruta) {
     <a class="barra__opcion" [routerLink]="opcion.ruta" routerLinkActive="barra__opcion--activa"
-       [routerLinkActiveOptions]="{ exact: opcion.rutaExacta === true }" ariaCurrentWhenActive="page"
+       [routerLinkActiveOptions]="opcionesActiva(opcion)" ariaCurrentWhenActive="page"
        [title]="opcion.texto" (click)="elegir(opcion)">
       <ng-container [ngTemplateOutlet]="plantillaIcono" [ngTemplateOutletContext]="{ $implicit: opcion.icono }" />
       <span class="barra__texto">{{ opcion.texto }}</span>
@@ -57,6 +70,9 @@
 <ng-template #plantillaIcono let-icono>
   <svg class="barra__icono" viewBox="0 0 24 24" aria-hidden="true">
     @switch (icono) {
+      @case ('inicio') {
+        <rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" />
+      }
       @case ('lista') {
         <path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5" /><path d="M10 13h6M10 17h6" />
       }

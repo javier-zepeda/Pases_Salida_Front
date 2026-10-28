@@ -9,16 +9,16 @@
         </button>
       }
 
-      <a class="encabezado__marca" routerLink="/pases">
+      <a class="encabezado__marca" routerLink="/inicio">
         <img src="img/logo-codaca-blanco.png" alt="Grupo Codaca" class="encabezado__logo">
         <span class="encabezado__separador" aria-hidden="true"></span>
-        <span class="encabezado__app">Gestor de Pases de Salida</span>
+        <span class="encabezado__app">Pases de Salida</span>
       </a>
     </div>
 
     @if (sesion.nombreUsuario()) {
-      <span class="encabezado__usuario" title="Usuario actual">
-        <span class="encabezado__inicial" aria-hidden="true">{{ sesion.nombreUsuario().charAt(0) }}</span>
+      <span class="encabezado__usuario" [class.encabezado__usuario--en-barra]="usuarioEnBarra()" [title]="sesion.nombreUsuario()">
+        <span class="encabezado__inicial" aria-hidden="true">{{ sesion.iniciales() }}</span>
         <span class="encabezado__nombre">{{ sesion.nombreUsuario() }}</span>
       </span>
     }

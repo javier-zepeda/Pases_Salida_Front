@@ -8,8 +8,7 @@
   --barra-acento: #e0262e;            /* rojo Codaca: marca la opción activa */
   --barra-texto: #c9ced6;
   --barra-texto-fuerte: #ffffff;
-  --barra-titulo: #7d8590;
-  --barra-ancho: 248px;
+  --barra-titulo: #7d8590;  --barra-ancho: 248px;
   --barra-ancho-colapsada: 68px;
 
   display: contents;
@@ -34,10 +33,85 @@
   width: var(--barra-ancho-colapsada);
 }
 
+/* Parte de arriba: usuario + flecha. Misma altura que el encabezado rojo (68px) */
+.barra__arriba {
+  min-height: 68px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px 0 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.barra__usuario {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Círculo con las iniciales, en rojo Codaca */
+.barra__avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--barra-acento);
+  color: var(--barra-texto-fuerte);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 0 3px rgba(224, 38, 46, 0.25);
+}
+
+.barra__usuario-textos {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nombre y rol: si no caben, se recortan con "…" */
+.barra__usuario-nombre,
+.barra__usuario-detalle {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.barra__usuario-nombre {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--barra-texto-fuerte);
+}
+
+.barra__usuario-detalle {
+  font-size: 12px;
+  color: var(--barra-titulo);
+}
+
+/* Colapsada: solo el círculo, y la flecha debajo */
+.barra--colapsada .barra__arriba {
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px 0 6px;
+}
+
+.barra--colapsada .barra__usuario {
+  flex: none;
+}
+
+.barra--colapsada .barra__usuario-textos {
+  display: none;
+}
+
 /* Botón para colapsar (flecha) */
 .barra__colapsar {
-  align-self: flex-end;
-  margin: 14px 14px 6px;
+  margin-left: auto;
   width: 36px;
   height: 36px;
   flex-shrink: 0;
@@ -68,9 +142,7 @@
 }
 
 .barra--colapsada .barra__colapsar {
-  align-self: center;
   margin-left: 0;
-  margin-right: 0;
 }
 
 .barra--colapsada .barra__colapsar svg {
@@ -208,6 +280,21 @@
     display: none;
   }
 
+  /* El panel del celular siempre muestra el usuario completo */
+  .barra--colapsada .barra__arriba {
+    flex-direction: row;
+    justify-content: flex-start;
+    padding: 0 10px 0 16px;
+  }
+
+  .barra--colapsada .barra__usuario {
+    flex: 1;
+  }
+
+  .barra--colapsada .barra__usuario-textos {
+    display: flex;
+  }
+
   .barra--colapsada .barra__titulo {
     height: auto;
     margin: 8px 12px 6px;
@@ -226,6 +313,11 @@
 
   .barra__secciones {
     padding-top: 12px;
+  }
+
+  /* Sin usuario y sin flecha, la parte de arriba no hace falta */
+  .barra__arriba:not(:has(.barra__usuario)) {
+    display: none;
   }
 
   .barra-fondo {

@@ -3,7 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Encabezado } from './layout/encabezado/encabezado';
 import { BarraLateral } from './layout/barra-lateral/barra-lateral';
-import { OpcionMenu, SeccionMenu } from './layout/barra-lateral/menu.model';
+import { OpcionMenu, SeccionMenu, UsuarioMenu } from './layout/barra-lateral/menu.model';
 import { SesionService } from './core/services/sesion.service';
 import { AutenticacionService } from './core/services/autenticacion.service';
 import { environment } from '../environments/environment';
@@ -37,6 +37,7 @@ export class App implements OnInit {
 
     const pases: OpcionMenu[] = [];
     if (this.sesion.tienePermiso('pases.ver')) {
+      pases.push({ texto: 'Inicio', icono: 'inicio', ruta: '/inicio' });
       pases.push({ texto: 'Pases de salida', icono: 'lista', ruta: '/pases', rutaExacta: true });
     }
     if (this.sesion.tienePermiso('pases.crear')) {
@@ -57,6 +58,21 @@ export class App implements OnInit {
     }
 
     return secciones;
+  });
+
+  // Usuario arriba de la barra lateral (nombre corto, iniciales y roles)
+  protected usuarioMenu = computed<UsuarioMenu | null>(() => {
+    const perfil = this.sesion.perfil();
+    if (perfil === null) {
+      return null;
+    }
+
+    return {
+      nombre: this.sesion.nombreCorto(),
+      nombreCompleto: perfil.nombre,
+      iniciales: this.sesion.iniciales(),
+      detalle: perfil.roles.join(', ')
+    };
   });
 
   protected menuPie: OpcionMenu[] = [

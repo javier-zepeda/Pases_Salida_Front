@@ -1,0 +1,250 @@
+/* Estilos compartidos por las pantallas de mantenimiento (sedes y talleres) */
+
+/* ── Título ─────────────────────────────────────────────────────────────── */
+.cabecera {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.cabecera__titulo {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.cabecera__subtitulo {
+  margin: 4px 0 0;
+  color: var(--texto-secundario);
+}
+
+/* ── Filtros: estado + búsqueda ─────────────────────────────────────────── */
+.filtros {
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filtros__estados {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  background: var(--blanco);
+  color: var(--texto-secundario);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--rojo-intenso);
+  color: var(--rojo-intenso);
+}
+
+.chip--activo,
+.chip--activo:hover {
+  background: var(--rojo-intenso);
+  border-color: var(--rojo-intenso);
+  color: var(--blanco);
+}
+
+.filtros__busqueda {
+  flex: 0 1 320px;
+}
+
+.filtros__busqueda input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.filtros__busqueda input:focus {
+  outline: none;
+  border-color: var(--rojo-intenso);
+  box-shadow: 0 0 0 3px rgba(204, 34, 41, 0.12);
+}
+
+/* ── Avisos ─────────────────────────────────────────────────────────────── */
+.aviso-pantalla {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.aviso-pantalla__cerrar {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.vacio {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--texto-secundario);
+}
+
+/* ── Tabla ──────────────────────────────────────────────────────────────── */
+.resultados {
+  overflow: hidden;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--blanco);
+  background: var(--rojo-intenso);
+  white-space: nowrap;
+}
+
+.tabla td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--borde-suave);
+  vertical-align: middle;
+}
+
+.tabla tr:last-child td {
+  border-bottom: none;
+}
+
+.tabla__inactiva td {
+  color: var(--texto-tenue);
+}
+
+.tabla__nombre {
+  font-weight: 500;
+}
+
+.tabla__tenue {
+  display: block;
+  font-size: 13px;
+  color: var(--texto-tenue);
+}
+
+.tabla__numero {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Botones pequeños de cada fila */
+.acciones-fila {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.acciones-fila .boton {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+/* Activa / Inactiva (mismos colores que Autorizado / Anulado) */
+.estado--activo {
+  color: var(--autorizado);
+  background: var(--autorizado-fondo);
+}
+
+.estado--inactivo {
+  color: var(--texto-secundario);
+  background: var(--borde-suave);
+}
+
+/* ── Diálogo del formulario ─────────────────────────────────────────────── */
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.formulario .errores ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.campo__ayuda {
+  font-size: 13px;
+  color: var(--texto-tenue);
+}
+
+.mayusculas {
+  text-transform: uppercase;
+}
+
+.mayusculas::placeholder {
+  text-transform: none;
+}
+
+/* ── Celular: cada fila se ve como una tarjeta ──────────────────────────── */
+@media (max-width: 800px) {
+  .tabla thead {
+    display: none;
+  }
+
+  .tabla,
+  .tabla tbody,
+  .tabla tr,
+  .tabla td {
+    display: block;
+    width: 100%;
+  }
+
+  .tabla tr {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .tabla td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    border: none;
+    text-align: right;
+  }
+
+  .tabla td::before {
+    content: attr(data-etiqueta);
+    color: var(--texto-tenue);
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .acciones-fila {
+    padding-top: 8px;
+  }
+
+  .filtros__busqueda {
+    flex: 1 1 100%;
+  }
+}

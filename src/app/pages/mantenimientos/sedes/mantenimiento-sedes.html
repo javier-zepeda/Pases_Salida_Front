@@ -1,0 +1,150 @@
+<div class="contenedor">
+
+  <!-- Título y acción principal -->
+  <div class="cabecera">
+    <div>
+      <h1 class="cabecera__titulo">Sedes</h1>
+      <p class="cabecera__subtitulo">Lugares donde están los talleres de Codaca</p>
+    </div>
+
+    @if (puedeEditar()) {
+      <button type="button" class="boton boton--principal" (click)="abrirNueva()">
+        <span aria-hidden="true">＋</span> Nueva sede
+      </button>
+    }
+  </div>
+
+  <!-- Filtros -->
+  <section class="tarjeta filtros" aria-label="Filtros">
+    <div class="filtros__estados" role="group" aria-label="Filtrar por estado">
+      <button type="button" class="chip" [class.chip--activo]="filtroEstado() === 'activas'" (click)="filtroEstado.set('activas')">Activas</button>
+      <button type="button" class="chip" [class.chip--activo]="filtroEstado() === 'inactivas'" (click)="filtroEstado.set('inactivas')">Inactivas</button>
+      <button type="button" class="chip" [class.chip--activo]="filtroEstado() === 'todas'" (click)="filtroEstado.set('todas')">Todas</button>
+    </div>
+
+    <div class="filtros__busqueda">
+      <label for="busqueda" class="solo-lector">Buscar sede</label>
+      <input id="busqueda" type="search" placeholder="Buscar por nombre"
+             [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)">
+    </div>
+  </section>
+
+  <!-- Resultado de la última acción -->
+  @if (aviso(); as avisoActual) {
+    <div class="aviso aviso-pantalla" [class.aviso--exito]="avisoActual.tipo === 'exito'" [class.aviso--error]="avisoActual.tipo === 'error'" role="status">
+      {{ avisoActual.texto }}
+      <button type="button" class="aviso-pantalla__cerrar" (click)="aviso.set(null)" aria-label="Cerrar aviso">✕</button>
+    </div>
+  }
+
+  <!-- Tabla -->
+  @if (errorCarga()) {
+    <div class="aviso aviso--error aviso-pantalla">
+      {{ errorCarga() }}
+      <button type="button" class="boton boton--secundario" (click)="cargarSedes()">Reintentar</button>
+    </div>
+  } @else if (cargando() && sedes().length === 0) {
+    <div class="tarjeta vacio">Cargando sedes…</div>
+  } @else if (sedesFiltradas().length === 0) {
+    <div class="tarjeta vacio">No hay sedes que coincidan.</div>
+  } @else {
+    <section class="tarjeta resultados">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Sede</th>
+            <th>Talleres activos</th>
+            <th>Estado</th>
+            <th><span class="solo-lector">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (sede of sedesFiltradas(); track sede.id_sede) {
+            <tr [class.tabla__inactiva]="!sede.activo">
+              <td data-etiqueta="Sede">
+                <div>
+                  <span class="tabla__nombre">{{ sede.nombre }}</span>
+                  <span class="tabla__tenue">{{ sede.direccion || 'Sin dirección' }}</span>
+                </div>
+              </td>
+              <td data-etiqueta="Talleres activos" class="tabla__numero">{{ sede.talleres_activos }}</td>
+              <td data-etiqueta="Estado">
+                <span class="estado" [class.estado--activo]="sede.activo" [class.estado--inactivo]="!sede.activo">
+                  {{ sede.activo ? 'Activa' : 'Inactiva' }}
+                </span>
+              </td>
+              <td>
+                <div class="acciones-fila">
+                  @if (tieneMapa(sede)) {
+                    <a class="boton boton--secundario" [href]="sede.mapa" target="_blank" rel="noopener noreferrer">Ver en el mapa</a>
+                  }
+                  @if (puedeEditar()) {
+                    <button type="button" class="boton boton--secundario" (click)="abrirEdicion(sede)">Editar</button>
+                    <button type="button" class="boton"
+                            [class.boton--peligro]="sede.activo"
+                            [class.boton--secundario]="!sede.activo"
+                            [disabled]="idCambiandoEstado() === sede.id_sede || motivoNoDesactivar(sede) !== ''"
+                            [title]="motivoNoDesactivar(sede)"
+                            (click)="cambiarEstado(sede)">
+                      {{ sede.activo ? 'Desactivar' : 'Activar' }}
+                    </button>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+
+  <!-- Ventana para crear o editar -->
+  @if (formularioAbierto()) {
+    <div class="fondo-dialogo" (click)="cerrarFormulario()">
+      <form class="dialogo formulario" role="dialog" aria-modal="true" aria-labelledby="titulo-formulario"
+            (click)="$event.stopPropagation()" (ngSubmit)="guardar()" (keydown.escape)="cerrarFormulario()">
+
+        <h2 id="titulo-formulario" class="dialogo__titulo">
+          {{ sedeEnEdicion() === null ? 'Nueva sede' : 'Editar sede' }}
+        </h2>
+
+        <div class="campo">
+          <label for="nombre">Nombre *</label>
+          <input id="nombre" name="nombre" class="mayusculas" maxlength="100" autocomplete="off"
+                 placeholder="Ej. Sede Zona 7" [(ngModel)]="datos.nombre">
+        </div>
+
+        <div class="campo">
+          <label for="direccion">Dirección</label>
+          <input id="direccion" name="direccion" maxlength="400" autocomplete="off" [(ngModel)]="datos.direccion">
+        </div>
+
+        <div class="campo">
+          <label for="mapa">Enlace de Google Maps</label>
+          <input id="mapa" name="mapa" type="url" maxlength="1000" autocomplete="off"
+                 placeholder="https://maps.app.goo.gl/..." [(ngModel)]="datos.mapa">
+          <span class="campo__ayuda">En Google Maps: busque la sede → Compartir → Copiar vínculo.</span>
+        </div>
+
+        @if (erroresFormulario().length > 0) {
+          <div class="aviso aviso--error errores" role="alert">
+            Revise lo siguiente:
+            <ul>
+              @for (error of erroresFormulario(); track $index) {
+                <li>{{ error }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        <div class="dialogo__botones">
+          <button type="button" class="boton boton--secundario" (click)="cerrarFormulario()" [disabled]="guardando()">Cancelar</button>
+          <button type="submit" class="boton boton--principal" [disabled]="guardando()">
+            {{ guardando() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+</div>

@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, signal, computed } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { PasesService } from '../../core/services/pases.service';
 import { CatalogosService } from '../../core/services/catalogos.service';
 import { SesionService } from '../../core/services/sesion.service';
@@ -27,6 +28,8 @@ export class ListadoPases implements OnInit {
   private pasesService = inject(PasesService);
   private catalogosService = inject(CatalogosService);
   private router = inject(Router);
+  private ruta = inject(ActivatedRoute);
+  private destruir = inject(DestroyRef);
   protected sesion = inject(SesionService);
 
   // Funciones de formato para usarlas en el HTML
@@ -79,7 +82,27 @@ export class ListadoPases implements OnInit {
 
   ngOnInit(): void {
     this.cargarTiposPase();
-    this.cargarPases();
+
+    // /pases?estado=0 (desde Inicio) abre el listado ya filtrado.
+    // Se escucha la URL y no solo se lee una vez: si ya está en el listado y
+    // elige "Pases de salida" en el menú (/pases), el filtro se quita.
+    this.ruta.queryParamMap
+      .pipe(takeUntilDestroyed(this.destruir))
+      .subscribe(parametros => {
+        this.estadoSeleccionado.set(this.leerEstado(parametros.get('estado')));
+        this.irAPrimeraPaginaYCargar();
+      });
+  }
+
+  // "0", "1", "2" → ese estado | cualquier otra cosa → null (todos)
+  private leerEstado(valor: string | null): number | null {
+    const estado = Number(valor);
+    const existe = this.opcionesEstado.some(opcion => opcion.valor === estado);
+
+    if (valor === null || valor === '' || !existe) {
+      return null;
+    }
+    return estado;
   }
 
   // ---------------------------------------------------------------------

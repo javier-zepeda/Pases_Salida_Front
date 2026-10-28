@@ -3,6 +3,7 @@ import { OrdenPendiente } from './pase.model';
 //Orden de trabajo tal como la devuelve Integra
 export interface OrdenIntegra {
   numero_orden: string;
+  taller: string | null;           // código del taller en Integra (CEN, REU, ...)
   codigo_cliente: string | null;
   cliente: string | null;
   placa: string | null;

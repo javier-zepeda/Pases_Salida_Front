@@ -102,6 +102,13 @@
   text-transform: uppercase;
 }
 
+/* En computadora el usuario ya se ve arriba de la barra lateral */
+@media (min-width: 901px) {
+  .encabezado__usuario--en-barra {
+    display: none;
+  }
+}
+
 /* Mismo ancho en el que se esconde la barra lateral (barra-lateral.css) */
 @media (max-width: 900px) {
   .encabezado__menu {

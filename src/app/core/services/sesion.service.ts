@@ -26,6 +26,19 @@ export class SesionService {
     return perfil.nombre;
   });
 
+  // Nombre corto e iniciales: "Javier Alberto Zepeda Aguirre" → "Javier Zepeda" y "JZ".
+  // Con 4 o más palabras (dos nombres y dos apellidos) el primer apellido es la tercera;
+  // con 2 o 3, la última.
+  readonly nombreCorto = computed(() => {
+    const partes = partesDelNombre(this.nombreUsuario());
+    return (partes.nombre + ' ' + partes.apellido).trim();
+  });
+
+  readonly iniciales = computed(() => {
+    const partes = partesDelNombre(this.nombreUsuario());
+    return (partes.nombre.charAt(0) + partes.apellido.charAt(0)).toUpperCase();
+  });
+
   // Pide el perfil al back. Devuelve una promesa para poder esperarla
   // antes de mostrar la aplicación.
   async cargarPerfil(): Promise<void> {
@@ -43,4 +56,20 @@ export class SesionService {
     }
     return perfil.permisos.includes(permiso);
   }
+}
+
+// "Javier Alberto Zepeda Aguirre" → { nombre: 'Javier', apellido: 'Zepeda' }
+function partesDelNombre(nombreCompleto: string): { nombre: string; apellido: string } {
+  const palabras = nombreCompleto.trim().split(/\s+/).filter(palabra => palabra !== '');
+
+  if (palabras.length === 0) {
+    return { nombre: '', apellido: '' };
+  }
+  if (palabras.length >= 4) {
+    return { nombre: palabras[0], apellido: palabras[2] };
+  }
+  if (palabras.length > 1) {
+    return { nombre: palabras[0], apellido: palabras[palabras.length - 1] };
+  }
+  return { nombre: palabras[0], apellido: '' };
 }

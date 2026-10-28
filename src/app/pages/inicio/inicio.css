@@ -1,0 +1,260 @@
+/* ── Saludo ─────────────────────────────────────────────────────────────── */
+.cabecera {
+  margin-bottom: 20px;
+}
+
+.cabecera__titulo {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.cabecera__subtitulo {
+  margin: 4px 0 0;
+  color: var(--texto-secundario);
+}
+
+.mensaje {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* ── Tarjetas con números ───────────────────────────────────────────────── */
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* Cada color se define una vez y lo usan el borde, el número y el ícono */
+.indicador--azul  { --color-indicador: var(--info);        --fondo-indicador: var(--info-fondo); }
+.indicador--ambar { --color-indicador: var(--creado);      --fondo-indicador: var(--creado-fondo); }
+.indicador--verde { --color-indicador: var(--autorizado);  --fondo-indicador: var(--autorizado-fondo); }
+.indicador--rojo  { --color-indicador: var(--rojo-intenso); --fondo-indicador: var(--rojo-suave); }
+
+.indicador {
+  display: flex;
+  flex-direction: column;
+  min-height: 132px;
+  border-left: 5px solid var(--color-indicador, var(--borde));
+  color: var(--texto);
+  text-decoration: none;
+  overflow: hidden;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+a.indicador:hover,
+a.indicador:focus-visible {
+  box-shadow: var(--sombra-elevada);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.indicador__cuerpo {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 18px 10px;
+}
+
+.indicador__numero {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-indicador);
+  font-variant-numeric: tabular-nums;
+}
+
+.indicador__titulo {
+  margin: 4px 0 0;
+  font-size: 15px;
+  color: var(--texto-secundario);
+}
+
+.indicador__icono {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  padding: 10px;
+  border-radius: 50%;
+  background: var(--fondo-indicador);
+  fill: none;
+  stroke: var(--color-indicador);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.indicador__pie {
+  padding: 8px 18px;
+  border-top: 1px solid var(--borde-suave);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-indicador);
+}
+
+/* Mientras carga */
+.indicador--cargando {
+  background: linear-gradient(90deg, var(--blanco) 0%, var(--borde-suave) 50%, var(--blanco) 100%);
+  background-size: 200% 100%;
+  animation: brillo 1.2s infinite linear;
+}
+
+@keyframes brillo {
+  from { background-position: 100% 0; }
+  to   { background-position: -100% 0; }
+}
+
+/* ── Pases por autorizar ────────────────────────────────────────────────── */
+.pendientes {
+  overflow: hidden;
+}
+
+.pendientes__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.pendientes__titulo {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.pendientes__enlace {
+  color: var(--rojo-intenso);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.pendientes__enlace:hover {
+  text-decoration: underline;
+}
+
+.pendientes__aviso {
+  margin: 16px;
+}
+
+.vacio {
+  margin: 0;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--texto-secundario);
+}
+
+/* ── Tabla (mismo estilo que el listado de pases) ───────────────────────── */
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla th {
+  padding: 12px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--blanco);
+  background: var(--rojo-intenso);
+  white-space: nowrap;
+}
+
+.tabla td {
+  padding: 14px;
+  border-bottom: 1px solid var(--borde-suave);
+  vertical-align: middle;
+}
+
+.tabla__fila {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.tabla__fila:hover,
+.tabla__fila:focus {
+  background: #fff7f6;
+  outline: none;
+}
+
+.tabla__fila:last-child td {
+  border-bottom: none;
+}
+
+.tabla__numero {
+  font-weight: 700;
+  color: var(--rojo-intenso);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla__cliente {
+  max-width: 260px;
+}
+
+.tabla__placa {
+  display: block;
+  font-weight: 500;
+}
+
+.tabla__tenue {
+  display: block;
+  font-size: 13px;
+  color: var(--texto-tenue);
+}
+
+/* ── Celular: cada pase se ve como una tarjeta ──────────────────────────── */
+@media (max-width: 800px) {
+  .tabla thead {
+    display: none;
+  }
+
+  .tabla,
+  .tabla tbody,
+  .tabla__fila,
+  .tabla td {
+    display: block;
+    width: 100%;
+  }
+
+  .tabla__fila {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--borde);
+  }
+
+  .tabla td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    border: none;
+    text-align: right;
+  }
+
+  .tabla td::before {
+    content: attr(data-etiqueta);
+    color: var(--texto-tenue);
+    font-size: 13px;
+    text-align: left;
+  }
+
+  .tabla__placa,
+  .tabla__tenue {
+    display: inline;
+    margin-left: 6px;
+  }
+
+  .tabla__cliente {
+    max-width: none;
+  }
+}
